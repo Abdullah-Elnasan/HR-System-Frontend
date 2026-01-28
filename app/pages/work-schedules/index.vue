@@ -164,6 +164,7 @@ const onSubmit = async (formData: WorkScheduleForm) => {
     if (editingId.value) {
       await updateWorkSchedule(editingId.value, payload);
     } else {
+
       await createWorkSchedule(payload);
     }
 

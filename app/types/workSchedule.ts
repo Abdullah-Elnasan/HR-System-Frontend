@@ -105,7 +105,7 @@ export interface CustomFlexibleDay {
 }
 
 export interface WorkScheduleForm extends WorkScheduleBasicForm {
-  use_uniform_schedule: boolean;
+  use_uniform_schedule: boolean ;
   uniform_fixed?: UniformFixedSchedule;
   uniform_flexible?: UniformFlexibleSchedule;
   custom_fixed_days?: CustomFixedDay[];

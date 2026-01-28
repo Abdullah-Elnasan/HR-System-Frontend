@@ -139,6 +139,8 @@ const totalWeeklyHours = computed(() =>
 const workingDaysCount = computed(
   () => localDays.value.filter((d) => d.is_working_day).length,
 );
+
+
 </script>
 
 <template>

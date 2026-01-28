@@ -38,20 +38,45 @@ const localForm = computed({
 
 /* ================== Initialize Custom Days ================== */
 
+// تأكد من وجود جميع الكائنات المطلوبة
+watch(
+  () => localForm.value.type,
+  (type) => {
+    if (type === "fixed" && !localForm.value.uniform_fixed) {
+      localForm.value.uniform_fixed = {
+        working_days: [0, 1, 2, 3, 4],
+        start_time: "08:00",
+        end_time: "16:00",
+        grace_period_in_minutes: 10,
+        early_leave_grace_minutes: 5,
+      };
+    }
+
+    if (type === "flexible" && !localForm.value.uniform_flexible) {
+      localForm.value.uniform_flexible = {
+        working_days: [0, 1, 2, 3, 4],
+        required_hours: 8,
+      };
+    }
+  },
+  { immediate: true }
+);
+
 // تأكد من وجود أيام مخصصة عند التبديل
 watch(
   () => localForm.value.use_uniform_schedule,
   (useUniform) => {
     if (!useUniform) {
       const emptyDays = createEmptyCustomDays();
-      if (!localForm.value.custom_fixed_days) {
+      if (!localForm.value.custom_fixed_days || localForm.value.custom_fixed_days.length === 0) {
         localForm.value.custom_fixed_days = emptyDays.fixed;
       }
-      if (!localForm.value.custom_flexible_days) {
+      if (!localForm.value.custom_flexible_days || localForm.value.custom_flexible_days.length === 0) {
         localForm.value.custom_flexible_days = emptyDays.flexible;
       }
     }
-  }
+  },
+  { immediate: true }
 );
 
 /* ================== Navigation ================== */
@@ -107,51 +132,33 @@ const steps = computed(() => [
   <div class="space-y-6" dir="rtl">
     <!-- Step Indicators -->
     <div class="flex  items-center justify-between">
-      <div
-        v-for="(step, idx) in steps"
-        :key="step.number"
-        class="flex items-center flex-1"
-      >
+      <div v-for="(step, idx) in steps" :key="step.number" class="flex items-center flex-1">
         <!-- Step Circle -->
         <div class="flex items-center gap-3">
 
 
           <!-- Step Title (Hidden on mobile) -->
-          <span
-            class="hidden sm:block text-sm font-medium"
-            :class="{
-              'text-highlighted': currentStep >= step.number,
-              'text-muted': currentStep < step.number,
-            }"
-          >
+          <span class="hidden sm:block text-sm font-medium" :class="{
+            'text-highlighted': currentStep >= step.number,
+            'text-muted': currentStep < step.number,
+          }">
             {{ step.title }}
           </span>
 
-          <div
-            class="flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all"
-            :class="{
-              'bg-primary border-primary text-white': currentStep >= step.number,
-              'border-muted text-muted': currentStep < step.number,
-            }"
-          >
-            <UIcon
-              v-if="currentStep > step.number"
-              name="i-lucide-check"
-              class="w-5 h-5"
-            />
+          <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all" :class="{
+            'bg-primary border-primary text-white': currentStep >= step.number,
+            'border-muted text-muted': currentStep < step.number,
+          }">
+            <UIcon v-if="currentStep > step.number" name="i-lucide-check" class="w-5 h-5" />
             <span v-else class="font-semibold text-sm">{{ step.number }}</span>
           </div>
         </div>
 
         <!-- Connector Line -->
-        <div
-          v-if="idx < steps.length - 1"
-          class="flex-1 h-0.5 mx-2 sm:mx-4 transition-all"
-          :class="{
-            'bg-primary': currentStep > step.number,
-            'bg-muted': currentStep <= step.number,
-          }"
-        />
+        <div v-if="idx < steps.length - 1" class="flex-1 h-0.5 mx-2 sm:mx-4 transition-all" :class="{
+          'bg-primary': currentStep > step.number,
+          'bg-muted': currentStep <= step.number,
+        }" />
       </div>
     </div>
 

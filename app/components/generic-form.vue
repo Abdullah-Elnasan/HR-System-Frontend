@@ -26,7 +26,7 @@ export interface Field<T> {
   multiple?: boolean;
   searchable?: boolean;
   searchApi?: (query: string) => Promise<any[]>;
-
+  renderLabel?: (value: any, items?: any[]) => string;
   /** Layout */
   colSpan?: 1 | 2 | 3 | 4;
 }
@@ -121,6 +121,7 @@ defineExpose({ submit });
           :label="field.label"
           :name="String(field.name)"
           v-bind="field.wrapperProps"
+          :required="field.componentProps?.required || false"
         >
           <!-- ================== Input (default + date) ================== -->
           <UInput
@@ -156,7 +157,7 @@ defineExpose({ submit });
             trailing-icon="mi:select"
             v-bind="field.componentProps"
           />
-          <USelectMenu
+          <!-- <USelectMenu
             v-else-if="field.component === 'select-menu'"
             v-model="form[field.name]"
             :items="field?.items"
@@ -177,8 +178,33 @@ defineExpose({ submit });
             loading-icon="i-lucide-loader"
             @update:searchTerm="onSelectSearch(field, $event)"
             v-bind="field.componentProps"
-          />
+          /> -->
 
+                    <USelectMenu
+  v-else-if="field.component === 'select-menu'"
+  v-model="form[field.name]"
+  :items="field?.items"
+  :icon="field.componentProps?.icon"
+  :multiple="field.multiple"
+  :searchable="field.searchable"
+  class="w-full"
+  trailing-icon="mi:select"
+  :loading="
+    props.selectLoading?.[field.name] ||
+    loadingFields[String(field.name)] ||
+    false
+  "
+  loading-icon="i-lucide-loader"
+  @update:searchTerm="onSelectSearch(field, $event)"
+  v-bind="field.componentProps"
+>
+  <!-- ✅ حل المشكلة -->
+  <!-- <template v-if="field.renderLabel" #item-label>
+    <span>
+      {{ field.renderLabel(form[field.name], field.items) }}
+    </span>
+  </template> -->
+</USelectMenu>
           <!-- ================== File Upload ================== -->
           <UFileUpload
             :ui="{
