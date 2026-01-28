@@ -1,4 +1,5 @@
 import type { ApiResponse } from "~/types/api"
+import { processPayloadForAPI } from "./payloadTransformers"
 
 export async function updateResource<T>({
   endpoint,
@@ -15,7 +16,7 @@ export async function updateResource<T>({
   successMessage?: string
   method?: 'PUT' | 'PATCH'
 }): Promise<T> {
-  const formData = payload instanceof FormData ? payload : toFormData(payload)
+  const formData = processPayloadForAPI(payload)
 
   try {
     const res = await $fetch<ApiResponse<T>>(endpoint, {

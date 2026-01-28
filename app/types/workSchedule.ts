@@ -317,6 +317,102 @@ export function transformScheduleToForm(
 }
 
 /* =========================================================
+ * تحويل بيانات API إلى صيغة WorkScheduleForm
+ * ========================================================= */
+
+export function transformAPIResponseToForm(apiData: any): WorkScheduleForm {
+  const form: WorkScheduleForm = {
+    ...emptyWorkScheduleForm(),
+    name_ar: apiData.name_ar || '',
+    name_en: apiData.name_en || '',
+    type: apiData.type || 'fixed',
+    description_ar: apiData.description_ar || null,
+    description_en: apiData.description_en || null,
+    is_active: apiData.is_active ? true : false,
+  }
+
+  // تحديد نوع النظام (موحد أم مخصص)
+  if (apiData.fixed_rules && apiData.fixed_rules.length > 0) {
+    form.type = 'fixed'
+
+    // التحقق مما إذا كانت القواعد موحدة أم مخصصة
+    const uniqueDays = new Set(apiData.fixed_rules.map((r: any) => r.day_of_week))
+    const isUniform = uniqueDays.size === 7 &&
+      !apiData.fixed_rules.some((r: any) => (r.period_index || 1) > 1)
+
+    if (isUniform) {
+      // نظام موحد
+      form.use_uniform_schedule = true
+      const firstRule = apiData.fixed_rules[0]
+      form.uniform_fixed = {
+        working_days: apiData.fixed_rules
+          .filter((r: any) => r.is_working_day)
+          .map((r: any) => r.day_of_week),
+        start_time: firstRule.start_time || '08:00',
+        end_time: firstRule.end_time || '16:00',
+        grace_period_in_minutes: firstRule.grace_period_in_minutes || 0,
+        early_leave_grace_minutes: firstRule.early_leave_grace_minutes || 0,
+      }
+    } else {
+      // نظام مخصص
+      form.use_uniform_schedule = false
+      const customDaysMap = new Map<number, any>()
+
+      apiData.fixed_rules.forEach((rule: any) => {
+        const dayOfWeek = rule.day_of_week
+        if (!customDaysMap.has(dayOfWeek)) {
+          customDaysMap.set(dayOfWeek, {
+            day_of_week: dayOfWeek,
+            is_working_day: !!rule.is_working_day,
+            periods: [],
+          })
+        }
+
+        const day = customDaysMap.get(dayOfWeek)
+        day.periods.push({
+          period_index: rule.period_index || 1,
+          start_time: rule.start_time || '08:00',
+          end_time: rule.end_time || '16:00',
+          grace_period_in_minutes: rule.grace_period_in_minutes || 0,
+          early_leave_grace_minutes: rule.early_leave_grace_minutes || 0,
+        })
+      })
+
+      form.custom_fixed_days = Array.from(customDaysMap.values()).sort(
+        (a: CustomFixedDay, b: CustomFixedDay) => a.day_of_week - b.day_of_week
+      )
+    }
+  } else if (apiData.flexible_rules && apiData.flexible_rules.length > 0) {
+    form.type = 'flexible'
+    form.use_uniform_schedule = true
+
+    const uniqueDays = new Set(apiData.flexible_rules.map((r: any) => r.day_of_week))
+    const isUniform = uniqueDays.size === 7
+
+    if (isUniform) {
+      // نظام موحد
+      const firstRule = apiData.flexible_rules[0]
+      form.uniform_flexible = {
+        working_days: apiData.flexible_rules
+          .filter((r: any) => r.is_working_day)
+          .map((r: any) => r.day_of_week),
+        required_hours: firstRule.required_hours || 8,
+      }
+    } else {
+      // نظام مخصص
+      form.use_uniform_schedule = false
+      form.custom_flexible_days = apiData.flexible_rules.map((rule: any) => ({
+        day_of_week: rule.day_of_week,
+        is_working_day: !!rule.is_working_day,
+        required_hours: rule.required_hours || 0,
+      })).sort((a: CustomFlexibleDay, b: CustomFlexibleDay) => a.day_of_week - b.day_of_week)
+    }
+  }
+
+  return form
+}
+
+/* =========================================================
  * Day Names
  * ========================================================= */
 
