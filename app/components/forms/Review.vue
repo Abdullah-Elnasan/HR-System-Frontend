@@ -37,7 +37,7 @@ const scheduleTypeIcon = computed(() =>
 );
 
 const configTypeLabel = computed(() =>
-  props.form.use_uniform_schedule ? "جدول موحد" : "جدول مخصص",
+  props.form.is_uniform ? "جدول موحد" : "جدول مخصص",
 );
 
 /**
@@ -46,7 +46,7 @@ const configTypeLabel = computed(() =>
 const workingDaysDetails = computed(() => {
   const details: Array<{ day: string; info: string }> = [];
 
-  if (props.form.use_uniform_schedule) {
+  if (props.form.is_uniform) {
     if (props.form.type === "fixed" && props.form.uniform_fixed) {
       const { working_days, start_time, end_time } = props.form.uniform_fixed;
 
@@ -105,7 +105,7 @@ const workingDaysDetails = computed(() => {
 const totalWeeklyHours = computed(() => {
   let totalMinutes = 0;
 
-  if (props.form.use_uniform_schedule) {
+  if (props.form.is_uniform) {
     if (props.form.type === "fixed" && props.form.uniform_fixed) {
       const { working_days, start_time, end_time } =
         props.form.uniform_fixed;

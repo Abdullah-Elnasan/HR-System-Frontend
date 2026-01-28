@@ -178,6 +178,7 @@ export async function apiFetch<T>(
     });
     return  res;
   } catch (error: any) {
+
     throw createError({
       statusCode: error?.response?.status ?? 500,
       statusMessage:

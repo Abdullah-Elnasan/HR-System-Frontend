@@ -35,6 +35,8 @@ const localForm = computed({
   get: () => props.modelValue,
   set: (val) => emit("update:modelValue", val),
 });
+console.log(localForm.value);
+console.log(props.modelValue);
 
 /* ================== Initialize Custom Days ================== */
 
@@ -64,7 +66,7 @@ watch(
 
 // تأكد من وجود أيام مخصصة عند التبديل
 watch(
-  () => localForm.value.use_uniform_schedule,
+  () => localForm.value.is_uniform,
   (useUniform) => {
     if (!useUniform) {
       const emptyDays = createEmptyCustomDays();
@@ -172,12 +174,12 @@ const steps = computed(() => [
       <!-- Step 2: Schedule Configuration -->
       <div v-show="currentStep === 2" class="space-y-6">
         <!-- Uniform Toggle -->
-        <UFormField label="نوع الإعداد" name="use_uniform_schedule">
+        <UFormField label="نوع الإعداد" name="is_uniform">
           <div class="flex items-center gap-3">
-            <USwitch v-model="localForm.use_uniform_schedule" />
+            <USwitch v-model="localForm.is_uniform" />
             <span class="text-sm text-muted">
               {{
-                localForm.use_uniform_schedule
+                localForm.is_uniform
                   ? "جدول موحد لجميع الأيام"
                   : "جدول مخصص لكل يوم"
               }}
@@ -189,13 +191,13 @@ const steps = computed(() => [
         <template v-if="localForm.type === 'fixed'">
           <!-- Uniform Fixed -->
           <FormsUniformFixed
-            v-if="localForm.use_uniform_schedule && localForm.uniform_fixed"
+            v-if="localForm.is_uniform && localForm.uniform_fixed"
             v-model="localForm.uniform_fixed"
           />
 
           <!-- Custom Fixed -->
           <FormsCustomFixed
-            v-else-if="!localForm.use_uniform_schedule && localForm.custom_fixed_days"
+            v-else-if="!localForm.is_uniform && localForm.custom_fixed_days"
             v-model="localForm.custom_fixed_days"
           />
         </template>
@@ -204,14 +206,14 @@ const steps = computed(() => [
         <template v-else>
           <!-- Uniform Flexible -->
           <FormsUniformFlexible
-            v-if="localForm.use_uniform_schedule && localForm.uniform_flexible"
+            v-if="localForm.is_uniform && localForm.uniform_flexible"
             v-model="localForm.uniform_flexible"
           />
 
           <!-- Custom Flexible -->
           <FormsCustomFlexible
             v-else-if="
-              !localForm.use_uniform_schedule && localForm.custom_flexible_days
+              !localForm.is_uniform && localForm.custom_flexible_days
             "
             v-model="localForm.custom_flexible_days"
           />

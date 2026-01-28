@@ -5,12 +5,12 @@ import { fetchList } from '~/service/useAsyncData'
 import { createResource } from '~/service/createResource'
 import { updateResource } from '~/service/updateResource'
 
-function getErrorMessage(err: any): string {
-  if (err?.data?.errors && typeof err.data.errors === 'object') {
-    return Object.values(err.data.errors).flat().join(', ')
-  }
-  return err?.data?.messageAr ?? err?.data?.message ?? err?.message ?? 'حدث خطأ غير متوقع'
-}
+// function getErrorMessage(err: any): string {
+//   if (err?.data?.errors && typeof err.data.errors === 'object') {
+//     return Object.values(err.data.errors).flat().join(', ')
+//   }
+//   return err?.data?.messageAr ?? err?.data?.message ?? err?.message ?? 'حدث خطأ غير متوقع'
+// }
 
 export const useUserGroupStore = defineStore('userGroups', {
   state: () => ({
@@ -56,7 +56,8 @@ export const useUserGroupStore = defineStore('userGroups', {
 
         return response
       } catch (err: any) {
-        this.error = getErrorMessage(err)
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err)
         throw err
       } finally {
         this.loading = false
@@ -84,7 +85,8 @@ export const useUserGroupStore = defineStore('userGroups', {
 
         return group
       } catch (err: any) {
-        this.error = getErrorMessage(err)
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err)
         throw err
       } finally {
         this.loading = false
@@ -95,7 +97,7 @@ export const useUserGroupStore = defineStore('userGroups', {
     async createUserGroup(payload: UserGroupForm | FormData) {
       this.loading = true
       this.error = null
-
+const toast = useToast()
       try {
         return await createResource<UserGroup>({
           endpoint: '/api/user-groups/user-groups',
@@ -107,7 +109,8 @@ export const useUserGroupStore = defineStore('userGroups', {
           },
         })
       } catch (err: any) {
-        this.error = getErrorMessage(err)
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err)
         throw err
       } finally {
         this.loading = false
@@ -118,7 +121,7 @@ export const useUserGroupStore = defineStore('userGroups', {
     async updateUserGroup(id: number, payload: Partial<UserGroupForm> | FormData) {
       this.loading = true
       this.error = null
-
+const toast = useToast()
       try {
         return await updateResource<UserGroup>({
           endpoint: `/api/user-groups/${id}`,
@@ -130,7 +133,8 @@ export const useUserGroupStore = defineStore('userGroups', {
           },
         })
       } catch (err: any) {
-        this.error = getErrorMessage(err)
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err)
         throw err
       } finally {
         this.loading = false
@@ -160,8 +164,9 @@ export const useUserGroupStore = defineStore('userGroups', {
           this.userGroups.splice(index, 0, backup)
           this.pagination.total += 1
         }
-        this.error = getErrorMessage(err)
-        toast.add({ title: this.error, color: 'error' })
+        // this.error = getErrorMessage(err)
+        handleApiError(err, toast)
+        // toast.add({ title: this.error, color: 'error' })
         throw err
       } finally {
         this.loading = false

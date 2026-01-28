@@ -71,6 +71,7 @@ export function useWorkSchedules() {
     try {
       await store.deleteWorkSchedule(id)
     } catch (err: any) {
+      console.log('Delete Error 2:', err)
       toast.add({
         title: 'خطأ',
         description: store.error ?? 'فشل في حذف جدول العمل',

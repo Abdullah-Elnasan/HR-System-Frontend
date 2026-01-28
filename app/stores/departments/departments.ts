@@ -5,12 +5,12 @@ import { fetchList } from "~/service/useAsyncData";
 import { createResource } from "~/service/createResource";
 import { updateResource } from "~/service/updateResource";
 
-function getErrorMessage(err: any): string {
-  if (err?.data?.errors && typeof err.data.errors === "object") {
-    return Object.values(err.data.errors).flat().join(", ");
-  }
-  return err?.data?.messageAr ?? err?.data?.message ?? err?.message ?? "حدث خطأ غير متوقع";
-}
+// function getErrorMessage(err: any): string {
+//   if (err?.data?.errors && typeof err.data.errors === "object") {
+//     return Object.values(err.data.errors).flat().join(", ");
+//   }
+//   return err?.data?.messageAr ?? err?.data?.message ?? err?.message ?? "حدث خطأ غير متوقع";
+// }
 
 export const useDepartmentsStore = defineStore("departments", {
   state: () => ({
@@ -56,7 +56,8 @@ export const useDepartmentsStore = defineStore("departments", {
 
         return response;
       } catch (err: any) {
-        this.error = getErrorMessage(err);
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err);
         throw err;
       } finally {
         this.loading = false;
@@ -84,7 +85,8 @@ export const useDepartmentsStore = defineStore("departments", {
 
         return department;
       } catch (err: any) {
-        this.error = getErrorMessage(err);
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err);
         throw err;
       } finally {
         this.loading = false;
@@ -95,7 +97,7 @@ export const useDepartmentsStore = defineStore("departments", {
     async createDepartment(payload: DepartmentForm | FormData) {
       this.loading = true;
       this.error = null;
-
+const toast = useToast();
       try {
         return await createResource<Department>({
           endpoint: "/api/departments/departments",
@@ -107,7 +109,8 @@ export const useDepartmentsStore = defineStore("departments", {
           },
         });
       } catch (err: any) {
-        this.error = getErrorMessage(err);
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err);
         throw err;
       } finally {
         this.loading = false;
@@ -118,7 +121,7 @@ export const useDepartmentsStore = defineStore("departments", {
     async updateDepartment(id: number, payload: Partial<DepartmentForm> | FormData) {
       this.loading = true;
       this.error = null;
-
+const toast = useToast();
       try {
         return await updateResource<Department>({
           endpoint: `/api/departments/${id}`,
@@ -130,7 +133,8 @@ export const useDepartmentsStore = defineStore("departments", {
           },
         });
       } catch (err: any) {
-        this.error = getErrorMessage(err);
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err);
         throw err;
       } finally {
         this.loading = false;
@@ -162,8 +166,9 @@ export const useDepartmentsStore = defineStore("departments", {
           this.pagination.total += 1;
         }
 
-        this.error = getErrorMessage(err);
-        toast.add({ title: this.error, color: "error" });
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err);
+        // toast.add({ title: this.error, color: "error" });
         throw err;
       } finally {
         this.loading = false;

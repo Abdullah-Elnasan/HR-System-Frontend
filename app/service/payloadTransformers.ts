@@ -106,7 +106,7 @@ function buildFixedRules(payload: any): any[] {
   const rules: any[] = []
   const allDays = [0, 1, 2, 3, 4, 5, 6]
 
-  if (payload.use_uniform_schedule && payload.uniform_fixed) {
+  if (payload.is_uniform && payload.uniform_fixed) {
     const { working_days, start_time, end_time, grace_period_in_minutes, early_leave_grace_minutes } = payload.uniform_fixed
 
     allDays.forEach((dayOfWeek) => {
@@ -122,7 +122,7 @@ function buildFixedRules(payload: any): any[] {
         is_working_day: isWorkingDay ? 1 : 0,
       })
     })
-  } else if (!payload.use_uniform_schedule && payload.custom_fixed_days) {
+  } else if (!payload.is_uniform && payload.custom_fixed_days) {
     payload.custom_fixed_days.forEach((day: any) => {
       day.periods.forEach((period: any) => {
         rules.push({
@@ -148,7 +148,7 @@ function buildFlexibleRules(payload: any): any[] {
   const rules: any[] = []
   const allDays = [0, 1, 2, 3, 4, 5, 6]
 
-  if (payload.use_uniform_schedule && payload.uniform_flexible) {
+  if (payload.is_uniform && payload.uniform_flexible) {
     const { working_days, required_hours } = payload.uniform_flexible
 
     allDays.forEach((dayOfWeek) => {
@@ -160,7 +160,7 @@ function buildFlexibleRules(payload: any): any[] {
         is_working_day: isWorkingDay ? 1 : 0,
       })
     })
-  } else if (!payload.use_uniform_schedule && payload.custom_flexible_days) {
+  } else if (!payload.is_uniform && payload.custom_flexible_days) {
     payload.custom_flexible_days.forEach((day: any) => {
       rules.push({
         day_of_week: day.day_of_week,

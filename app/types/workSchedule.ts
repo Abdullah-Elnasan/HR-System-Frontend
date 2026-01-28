@@ -41,6 +41,7 @@ export interface WorkSchedule {
   description_en: string | null;
   type: WorkScheduleType;
   is_active: boolean;
+  is_uniform: boolean;
   fixed_rules?: FixedRule[];
   flexible_rules?: FlexibleRule[];
   created_at: string;
@@ -71,6 +72,7 @@ export interface WorkScheduleBasicForm {
   description_ar?: string;
   description_en?: string;
   is_active: boolean;
+  is_uniform: boolean;
 }
 
 export interface UniformFixedSchedule {
@@ -105,7 +107,7 @@ export interface CustomFlexibleDay {
 }
 
 export interface WorkScheduleForm extends WorkScheduleBasicForm {
-  use_uniform_schedule: boolean ;
+  is_uniform: boolean ;
   uniform_fixed?: UniformFixedSchedule;
   uniform_flexible?: UniformFlexibleSchedule;
   custom_fixed_days?: CustomFixedDay[];
@@ -124,7 +126,7 @@ export function emptyWorkScheduleForm(): WorkScheduleForm {
     description_ar: "",
     description_en: "",
     is_active: true,
-    use_uniform_schedule: true,
+    is_uniform: true,
     uniform_fixed: {
       start_time: "08:00",
       end_time: "16:00",
@@ -180,6 +182,7 @@ export type WorkSchedulePayload = {
   description_ar?: string;
   description_en?: string;
   is_active: boolean;
+  is_uniform: boolean;  // ✅ إضافة هذا الحقل
   fixed_rules?: FixedRule[];
   flexible_rules?: FlexibleRule[];
 };
@@ -198,6 +201,7 @@ export function transformFormToPayload(
     description_ar: form.description_ar || undefined,
     description_en: form.description_en || undefined,
     is_active: form.is_active,
+    is_uniform: form.is_uniform,  // ✅ إضافة هذا
   };
 
   return form.type === "fixed"
@@ -212,7 +216,7 @@ export function transformFormToPayload(
 function buildFixedRules(form: WorkScheduleForm): FixedRule[] {
   const rules: FixedRule[] = [];
 
-  if (form.use_uniform_schedule && form.uniform_fixed) {
+  if (form.is_uniform && form.uniform_fixed) {
     for (const day of DAYS_OF_WEEK) {
       const isWorking = form.uniform_fixed.working_days.includes(day);
       rules.push({
@@ -263,7 +267,7 @@ function buildFixedRules(form: WorkScheduleForm): FixedRule[] {
 function buildFlexibleRules(form: WorkScheduleForm): FlexibleRule[] {
   const rules: FlexibleRule[] = [];
 
-  if (form.use_uniform_schedule && form.uniform_flexible) {
+  if (form.is_uniform && form.uniform_flexible) {
     for (const day of DAYS_OF_WEEK) {
       const isWorking = form.uniform_flexible.working_days.includes(day);
       rules.push({
@@ -290,27 +294,110 @@ function buildFlexibleRules(form: WorkScheduleForm): FlexibleRule[] {
 }
 
 /* =========================================================
- * Backend → Form ✅ (محل الخطأ الثاني)
+ * Backend → Form ✅ تحديث شامل
  * ========================================================= */
 
 export function transformScheduleToForm(
   schedule: WorkSchedule
 ): WorkScheduleForm {
-  const form = emptyWorkScheduleForm();
+  const form: WorkScheduleForm = {
+    ...emptyWorkScheduleForm(),
+    name_ar: schedule.name_ar,
+    name_en: schedule.name_en,
+    type: schedule.type,
+    description_ar: schedule.description_ar ?? "",
+    description_en: schedule.description_en ?? "",
+    is_active: schedule.is_active,
+    is_uniform: schedule.is_uniform,
+  };
 
-  form.name_ar = schedule.name_ar;
-  form.name_en = schedule.name_en;
-  form.type = schedule.type;
-  form.is_active = schedule.is_active;
-  form.description_ar = schedule.description_ar ?? "";
-  form.description_en = schedule.description_en ?? "";
+  // =============== FIXED RULES ===============
+  if (schedule.type === "fixed" && schedule.fixed_rules && schedule.fixed_rules.length > 0) {
+    const rules = schedule.fixed_rules;
+    const uniqueDays = new Set(rules.map((r) => r.day_of_week));
 
-  if (schedule.type === "fixed" && schedule.fixed_rules) {
-    form.use_uniform_schedule = true;
+    // التحقق: هل النظام موحد (7 أيام بدون فترات متعددة)؟
+    const isUniform = uniqueDays.size === 7 && !rules.some((r) => (r.period_index || 1) > 1);
+
+    if (isUniform) {
+      // نظام موحد
+      form.is_uniform = true;
+      const firstWorkingRule = rules.find((r) => r.is_working_day);
+
+      form.uniform_fixed = {
+        working_days: rules
+          .filter((r) => r.is_working_day)
+          .map((r) => r.day_of_week as DayOfWeek),
+        start_time: firstWorkingRule?.start_time || "08:00",
+        end_time: firstWorkingRule?.end_time || "16:00",
+        grace_period_in_minutes: firstWorkingRule?.grace_period_in_minutes || 0,
+        early_leave_grace_minutes: firstWorkingRule?.early_leave_grace_minutes || 0,
+      };
+    } else {
+      // نظام مخصص
+      form.is_uniform = false;
+      const customDaysMap = new Map<DayOfWeek, CustomFixedDay>();
+
+      rules.forEach((rule) => {
+        const dayOfWeek = rule.day_of_week;
+
+        if (!customDaysMap.has(dayOfWeek)) {
+          customDaysMap.set(dayOfWeek, {
+            day_of_week: dayOfWeek,
+            is_working_day: rule.is_working_day,
+            periods: [],
+          });
+        }
+
+        const day = customDaysMap.get(dayOfWeek)!;
+
+        if (rule.is_working_day) {
+          day.periods.push({
+            period_index: rule.period_index,
+            start_time: rule.start_time || "08:00",
+            end_time: rule.end_time || "16:00",
+            grace_period_in_minutes: rule.grace_period_in_minutes,
+            early_leave_grace_minutes: rule.early_leave_grace_minutes,
+          });
+        }
+      });
+
+      form.custom_fixed_days = Array.from(customDaysMap.values()).sort(
+        (a, b) => a.day_of_week - b.day_of_week
+      );
+    }
   }
 
-  if (schedule.type === "flexible" && schedule.flexible_rules) {
-    form.use_uniform_schedule = true;
+  // =============== FLEXIBLE RULES ===============
+  if (schedule.type === "flexible" && schedule.flexible_rules && schedule.flexible_rules.length > 0) {
+    const rules = schedule.flexible_rules;
+    const uniqueDays = new Set(rules.map((r) => r.day_of_week));
+    const isUniform = uniqueDays.size === 7;
+
+    if (isUniform) {
+      // نظام موحد
+      form.is_uniform = true;
+      const firstWorkingRule = rules.find((r) => r.is_working_day);
+
+      form.uniform_flexible = {
+        working_days: rules
+          .filter((r) => r.is_working_day)
+          .map((r) => r.day_of_week as DayOfWeek),
+        required_hours: firstWorkingRule
+          ? Math.round((firstWorkingRule.required_minutes / 60) * 10) / 10
+          : 8,
+      };
+    } else {
+      // نظام مخصص
+      form.is_uniform = false;
+      form.custom_flexible_days = rules
+        .map((rule) => ({
+          day_of_week: rule.day_of_week,
+          is_working_day: rule.is_working_day,
+          required_hours: Math.round((rule.required_minutes / 60) * 10) / 10,
+        }))
+        .sort((a, b) => a.day_of_week - b.day_of_week);
+    }
   }
 
   return form;
@@ -342,7 +429,7 @@ export function transformAPIResponseToForm(apiData: any): WorkScheduleForm {
 
     if (isUniform) {
       // نظام موحد
-      form.use_uniform_schedule = true
+      form.is_uniform = true
       const firstRule = apiData.fixed_rules[0]
       form.uniform_fixed = {
         working_days: apiData.fixed_rules
@@ -355,7 +442,7 @@ export function transformAPIResponseToForm(apiData: any): WorkScheduleForm {
       }
     } else {
       // نظام مخصص
-      form.use_uniform_schedule = false
+      form.is_uniform = false
       const customDaysMap = new Map<number, any>()
 
       apiData.fixed_rules.forEach((rule: any) => {
@@ -384,7 +471,7 @@ export function transformAPIResponseToForm(apiData: any): WorkScheduleForm {
     }
   } else if (apiData.flexible_rules && apiData.flexible_rules.length > 0) {
     form.type = 'flexible'
-    form.use_uniform_schedule = true
+    form.is_uniform = true
 
     const uniqueDays = new Set(apiData.flexible_rules.map((r: any) => r.day_of_week))
     const isUniform = uniqueDays.size === 7
@@ -400,7 +487,7 @@ export function transformAPIResponseToForm(apiData: any): WorkScheduleForm {
       }
     } else {
       // نظام مخصص
-      form.use_uniform_schedule = false
+      form.is_uniform = false
       form.custom_flexible_days = apiData.flexible_rules.map((rule: any) => ({
         day_of_week: rule.day_of_week,
         is_working_day: !!rule.is_working_day,

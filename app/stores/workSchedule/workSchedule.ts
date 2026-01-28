@@ -5,18 +5,25 @@ import { fetchList } from '~/service/useAsyncData'
 import { createResource } from '~/service/createResource'
 import { updateResource } from '~/service/updateResource'
 
-function getErrorMessage(err: any): string {
-  if (err?.data?.errors && typeof err.data.errors === 'object') {
-    return Object.values(err.data.errors).flat().join(', ')
-  }
+// function getErrorMessage(err: any): string {
+//   console.log('API Error:', err)
+//   // إذا كانت errors مصفوفة
+//   if (err?.data?.errors && Array.isArray(err.data.errors)) {
+//     return err.data.errors.join(', ')
+//   }
 
-  return (
-    err?.data?.messageAr ??
-    err?.data?.message ??
-    err?.message ??
-    'حدث خطأ غير متوقع'
-  )
-}
+//   // إذا كانت errors object
+//   if (err?.data?.errors && typeof err.data.errors === 'object') {
+//     return Object.values(err.data.errors).flat().join(', ')
+//   }
+
+//   return (
+//     err?.data?.messageAr ??
+//     err?.data?.message ??
+//     err?.message ??
+//     'حدث خطأ غير متوقع'
+//   )
+// }
 
 export const useWorkSchedulesStore = defineStore('workSchedules', {
   state: () => ({
@@ -53,7 +60,7 @@ export const useWorkSchedulesStore = defineStore('workSchedules', {
           search: params?.filter?.search,
         })
 
-        
+
 
         this.workSchedules = response.data
         this.pagination = response.pagination
@@ -64,7 +71,8 @@ export const useWorkSchedulesStore = defineStore('workSchedules', {
 
         return response
       } catch (err: any) {
-        this.error = getErrorMessage(err)
+        
+        // this.error = getErrorMessage(err)
         throw err
       } finally {
         this.loading = false
@@ -75,7 +83,7 @@ export const useWorkSchedulesStore = defineStore('workSchedules', {
     async fetchWorkScheduleById(id: number | string) {
       this.loading = true
       this.error = null
-
+const toast = useToast()
       try {
         const response = await fetchList<{ data: WorkSchedule }>({
           endpoint: `/api/work-schedules/${id}`,
@@ -87,7 +95,8 @@ export const useWorkSchedulesStore = defineStore('workSchedules', {
 
         return schedule
       } catch (err: any) {
-        this.error = getErrorMessage(err)
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err)
         throw err
       } finally {
         this.loading = false
@@ -98,7 +107,7 @@ export const useWorkSchedulesStore = defineStore('workSchedules', {
     async createWorkSchedule(payload: WorkSchedulePayload) {
       this.loading = true
       this.error = null
-
+ const toast = useToast()
       try {
         return await createResource<WorkSchedule>({
           endpoint: '/api/work-schedules/work-schedules',
@@ -110,7 +119,8 @@ export const useWorkSchedulesStore = defineStore('workSchedules', {
           },
         })
       } catch (err: any) {
-        this.error = getErrorMessage(err)
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err)
         throw err
       } finally {
         this.loading = false
@@ -124,7 +134,7 @@ export const useWorkSchedulesStore = defineStore('workSchedules', {
     ) {
       this.loading = true
       this.error = null
-
+ const toast = useToast()
       try {
         return await updateResource<WorkSchedule>({
           endpoint: `/api/work-schedules/${id}`,
@@ -136,7 +146,8 @@ export const useWorkSchedulesStore = defineStore('workSchedules', {
           },
         })
       } catch (err: any) {
-        this.error = getErrorMessage(err)
+        handleApiError(err, toast)
+        // this.error = getErrorMessage(err)
         throw err
       } finally {
         this.loading = false
@@ -162,13 +173,13 @@ export const useWorkSchedulesStore = defineStore('workSchedules', {
         toast.add({ title: 'تم حذف نظام الدوام بنجاح', color: 'success' })
         return true
       } catch (err: any) {
+        console.log('Delete Error:', err)
         if (backup && index !== -1) {
           this.workSchedules.splice(index, 0, backup)
           this.pagination.total += 1
         }
 
-        this.error = getErrorMessage(err)
-        toast.add({ title: this.error, color: 'error' })
+        handleApiError(err, toast)
         throw err
       } finally {
         this.loading = false
