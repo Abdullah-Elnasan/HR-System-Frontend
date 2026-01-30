@@ -69,6 +69,7 @@ const items: NavigationMenuItem[][] = [
     { label: "إدارة الموظفين", icon: "i-lucide-users" , to: '/employees' },
     { label: "إدارة الأفرع", icon: "gravity-ui:branches-down" , to: '/branches' },
     { label: "إدارة الأقسام", icon: "lucide:folder-tree" , to: '/departments' },
+    { label: "إدارة الرواتب", icon: "lucide:folder-tree" , to: '/payroll-systems' },
     // { label: "إدارة أنظمة الدوام", icon: "lucide:folder-tree" , to: '/work-schedules' },
     { label: "إدارة مجموعات المستخدمين", icon: "streamline-flex:user-collaborate-group-solid" , to: '/user-groups' },
         {
