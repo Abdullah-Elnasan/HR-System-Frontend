@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { generateColumns } from "~/utils/generateColumns";
-import type { WorkScheduleAssignment, WorkScheduleAssignmentForm } from "~/types/workScheduleAssignment";
-import { emptyWorkScheduleAssignmentForm } from "~/types/workScheduleAssignment";
-import { isWorkScheduleAssignmentRow } from "~/composables/WorkScheduleAssignment/isWorkScheduleAssignmentRow";
-import { useWorkScheduleAssignments } from "~/composables/WorkScheduleAssignment/useWorkScheduleAssignments";
+import type { WorkScheduleAssignment, WorkScheduleAssignmentForm } from "~/types/workScheduleAssignments";
+import { emptyWorkScheduleAssignmentForm } from "~/types/workScheduleAssignments";
+import { isWorkScheduleAssignmentRow } from "~/composables/workScheduleAssignment/isWorkScheduleAssignmentRow";
+import { useWorkScheduleAssignments } from "~/composables/workScheduleAssignment/useWorkScheduleAssignments";
 
 const UButton = resolveComponent("UButton");
 
@@ -198,6 +198,7 @@ const onDeleteAssignmentHandler = async (id: number) => {
     v-else
     :columns="columns"
     :data="enhancedAssignments"
+    :btn-create="true"
     :total="safePagination.total"
     :page="page"
     :page-sizes="pageSizes"

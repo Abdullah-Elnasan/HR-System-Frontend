@@ -9,7 +9,7 @@ import { useClipboard, refDebounced } from "@vueuse/core";
 import type { Column } from "@tanstack/vue-table";
 import type { ColumnDef } from "@tanstack/vue-table";
 import type { TableColumn, TableRow, DropdownMenuItem } from "@nuxt/ui";
-import type { StatusConfig } from "../types/table";
+import type { StatusConfig, TableActionsConfig } from "../types/table";
 import type { TableMeta } from "@tanstack/table-core";
 import type { Employee } from "~/types/employee";
 
@@ -39,12 +39,14 @@ const props = defineProps<{
   meta?: TableMeta<T>;
   sorting?: any[];
   globalFilter?: string;
+  btnCreate?: boolean;
   titleBtnCreate: string;
   titleBtnIcon: string;
   titleBtnEdit: string;
   linkPageAdd?: string;
   columnFilters?: any[];
   loading?: boolean;
+  actions?: TableActionsConfig;
 }>();
 
 /* =========================================================
@@ -126,12 +128,14 @@ watch(
   },
 );
 
+
+
 /* =========================================================
    Helpers
 ========================================================= */
 function statusCell(value: unknown) {
-  console.log(value);
-  console.log(typeof value);
+  // console.log(value);
+  // console.log(typeof value);
 
   // ✅ نحول boolean إلى string
   if (typeof value === "boolean") {
@@ -144,12 +148,14 @@ function statusCell(value: unknown) {
   const cfg = props.statusMap?.[value];
   if (!cfg) return value;
 
-  return h(
-    UBadge,
-    { color: cfg.color, variant: "soft" },
-    () => cfg.label
-  );
+  return h(UBadge, { color: cfg.color, variant: "soft" }, () => cfg.label);
 }
+
+
+function displayValue(value: unknown) {
+  return value === null || value === undefined || value === 0 ? "-" : value;
+}
+
 
 function getHeader(column: Column<T>, label: string) {
   const isSorted = column.getIsSorted();
@@ -212,6 +218,13 @@ const reference = computed(() => ({
     }) as DOMRect,
 }));
 
+const actionsConfig = computed<TableActionsConfig>(() => ({
+  copy: props.actions?.copy !== false,
+  view: props.actions?.view !== false,
+  edit: props.actions?.edit !== false,
+  delete: props.actions?.delete !== false,
+}));
+
 const selectedRow = ref<TableRow<Employee> | null>(null);
 const open = ref(false);
 const openDebounced = refDebounced(open, 50);
@@ -225,8 +238,11 @@ const toast = useToast();
 const { copy } = useClipboard();
 
 function getDropdownActions(row: T): DropdownMenuItem[][] {
-  return [
-    [
+  const items: DropdownMenuItem[][] = [];
+
+  /* ===== Copy ID ===== */
+  if (actionsConfig.value.copy) {
+    items.push([
       {
         label: "Copy ID",
         icon: "i-lucide-copy",
@@ -239,31 +255,48 @@ function getDropdownActions(row: T): DropdownMenuItem[][] {
           });
         },
       },
-    ],
-    [
-      {
-        label: "View",
-        icon: "i-lucide-eye",
-        onSelect: () => emit("view:row", row.id),
-      },
-      {
-        label: "Edit",
-        icon: "i-lucide-edit",
-        onSelect: () =>
-          emit("update:data", {
-            title: props.titleBtnEdit,
-            row,
-          }),
-      },
-      {
-        label: "Delete",
-        icon: "i-lucide-trash",
-        color: "error",
-        onSelect: () => emit("delete:row", row.id),
-      },
-    ],
-  ];
+    ]);
+  }
+
+  /* ===== Main Actions ===== */
+  const main: DropdownMenuItem[] = [];
+
+  if (actionsConfig.value.view) {
+    main.push({
+      label: "View",
+      icon: "i-lucide-eye",
+      onSelect: () => emit("view:row", row.id),
+    });
+  }
+
+  if (actionsConfig.value.edit) {
+    main.push({
+      label: "Edit",
+      icon: "i-lucide-edit",
+      onSelect: () =>
+        emit("update:data", {
+          title: props.titleBtnEdit,
+          row,
+        }),
+    });
+  }
+
+  if (actionsConfig.value.delete) {
+    main.push({
+      label: "Delete",
+      icon: "i-lucide-trash",
+      color: "error",
+      onSelect: () => emit("delete:row", row.id),
+    });
+  }
+
+  if (main.length) {
+    items.push(main);
+  }
+
+  return items;
 }
+
 </script>
 
 <template>
@@ -318,6 +351,7 @@ function getDropdownActions(row: T): DropdownMenuItem[][] {
         <template v-if="linkPageAdd">
           <NuxtLink :to="linkPageAdd">
             <UButton
+              v-if="btnCreate"
               :label="titleBtnCreate"
               variant="outline"
               color="neutral"
@@ -327,6 +361,7 @@ function getDropdownActions(row: T): DropdownMenuItem[][] {
         </template>
         <template v-else>
           <UButton
+            v-if="btnCreate"
             :label="titleBtnCreate"
             variant="outline"
             color="neutral"
@@ -438,7 +473,7 @@ function getDropdownActions(row: T): DropdownMenuItem[][] {
             </span>
 
             <slot v-else :name="`${col.id}-cell`" :getValue="getValue">
-              {{ getValue() }}
+              {{ displayValue(getValue()) }}
             </slot>
           </template>
         </UTable>

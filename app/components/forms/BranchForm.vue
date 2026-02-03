@@ -36,10 +36,11 @@ const stringToCalendarDate = (dateString: string | null | undefined): CalendarDa
   // القيمة الافتراضية
   return new CalendarDate(2022, 1, 10);
 };
-const startsAtCalendar = computed({
-  get: () => stringToCalendarDate(model.value.starts_at),
-  set: (val) => (model.value.starts_at = val.toString()),
-});
+
+// const startsAtCalendar = computed({
+//   get: () => stringToCalendarDate(model.value.starts_at),
+//   set: (val) => (model.value.starts_at = val.toString()),
+// });
 
 /* ================== Fields ================== */
 const baseFields: Field<BranchForm>[] = [
@@ -75,11 +76,31 @@ const createOnlyFields: Field<BranchForm>[] = [
     },
   },
   {
-    name: "starts_at",
-    label: "تاريخ تفعيل نظام الدوام",
+    name: "payroll_system_id",
+    label: "نظام الرواتب",
     colSpan: 1,
-    component: "custom",
+    component: "select-menu",
+    searchable: true,
+    items: [],
+    searchApi: async (q: string) => {
+      const res: any = await $fetch("/api/payroll-systems/payroll-systems", {
+        params: { "filter[search]": q },
+      });
+      return res.data;
+    },
+    componentProps: {
+      valueKey: "id",
+      labelKey: "name",
+      placeholder: "اختر نظام الرواتب",
+      icon: "lucide:calendar-clock",
+    },
   },
+  // {
+  //   name: "starts_at",
+  //   label: "تاريخ تفعيل نظام الدوام",
+  //   colSpan: 1,
+  //   component: "custom",
+  // },
 ];
 
 const fields = computed<Field<BranchForm>[]>(() =>
@@ -90,6 +111,7 @@ const fields = computed<Field<BranchForm>[]>(() =>
 
 /* ================== Loading ================== */
 const loadingWorkSchedules = ref(false);
+const loadingfetchPayrollSystems = ref(false);
 
 const fetchWorkSchedules = async () => {
   loadingWorkSchedules.value = true;
@@ -102,11 +124,23 @@ const fetchWorkSchedules = async () => {
 };
 
 
+const fetchPayrollSystems = async () => {
+  loadingfetchPayrollSystems.value = true;
+  const res: any = await $fetch("/api/payroll-systems/payroll-systems");
+  const field = createOnlyFields.find((f) => f.name === "payroll_system_id");
+  if (field) {
+    field.items = [...res.data];
+  }
+  loadingfetchPayrollSystems.value = false;
+};
+
+
 /* ================== Expose ================== */
 const formRef = ref<{ submit: () => void } | null>(null);
 defineExpose({
   submit: () => formRef.value?.submit(),
 });
+
 
 // defineExpose({
 //   submit: async () => {
@@ -115,7 +149,9 @@ defineExpose({
 //   }
 // })
 
+
 fetchWorkSchedules();
+fetchPayrollSystems();
 </script>
 <template>
   <ClientOnly>
@@ -128,12 +164,14 @@ fetchWorkSchedules();
       :columns="props.columns"
       :select-loading="{
         work_schedule_id: loadingWorkSchedules,
+        payroll_system_id: loadingfetchPayrollSystems,
+
       }"
       @submit="emit('submit', $event)"
       dir="rtl"
     >
       <!-- تاريخ تفعيل نظام الدوام -->
-      <template #field-starts_at>
+      <!-- <template #field-starts_at>
         <UInputDate v-model="startsAtCalendar">
           <template #trailing>
             <UPopover>
@@ -148,7 +186,7 @@ fetchWorkSchedules();
             </UPopover>
           </template>
         </UInputDate>
-      </template>
+      </template> -->
     </GenericForm>
   </ClientOnly>
 </template>

@@ -121,7 +121,7 @@ const toast = useToast();
     async updateEmployee(id: number, payload: Partial<EmployeeForm> | FormData) {
       this.loading = true;
       this.error = null;
-const toast = useToast();
+      const toast = useToast();
       try {
         return await updateResource<Employee>({
           endpoint: `/api/employees/${id}`,

@@ -67,6 +67,7 @@ const columns = computed(() =>
             location_ar: "الموقع",
             current_work_schedule:'نظام الدوام الحالي',
             upcoming_work_schedule:'نظام الدوام القادم',
+            payroll_system:'نظام الرواتب ',
             employees_count: "عدد الموظفين",
             active_employees_count: "عدد الموظفين النشطين",
             action: "العمليات",
@@ -85,6 +86,7 @@ const columns = computed(() =>
             action: { hideable: false },
             current_work_schedule: { type: "object", valueKey: "name_ar" },
             upcoming_work_schedule: { type: "object", valueKey: "name_ar" },
+            payroll_system: { type: "object", valueKey: "name" },
           },
         },
         UButton

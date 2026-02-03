@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { generateColumns } from "~/utils/generateColumns";
-import type { Employee, EmployeeForm } from "~/types/employee";
-import { emptyEmployeeForm } from "~/types/employee";
-import { useEmployees } from "~/composables/employee/useEmployees";
-import { isEmployeeRow } from "~/composables/employee/isEmployeeRow";
+
+import { isAttendanceRow } from "~/composables/attendances/isAttendanceRow";
+import { useAttendance } from "~/composables/attendances/useAttendance";
+import {
+  emptyAttendanceForm,
+  type Attendance,
+  type AttendanceForm,
+} from "~/types/attendance";
 
 const UButton = resolveComponent("UButton");
 
 definePageMeta({
   layout: "dashboard",
-  title: "إدارة الموظفين",
+  title: "إدارة الحضور",
   keepalive: false,
 });
 
@@ -24,16 +28,16 @@ const {
   setPage,
   setPageSize,
   setSearch,
-  deleteEmployee,
-  createEmployee,
-  updateEmployee,
-} = useEmployees();
+  deleteRecord,
+  createRecord,
+  updateRecord,
+} = useAttendance();
 
 const open = ref(false);
 const titleDrower = ref("");
 
 /* ================== Computed ================== */
-const employees = computed<Employee[]>(() => data.value ?? []);
+const records = computed<Attendance[]>(() => data.value ?? []);
 
 const safePagination = computed(() => ({
   total: pagination.value?.total ?? 0,
@@ -48,80 +52,101 @@ const sorting = ref<any[]>([]);
 const columnFilters = ref<any[]>([]);
 const firstLoad = ref(true);
 
-/* ================== UI ================== */
-const statusMap: Record<string, { label: string; color: string }> = {
-  active: { label: "نشط", color: "success" },
-  inactive: { label: "غير نشط", color: "error" },
-};
-
 const meta = {
   class: {
     tr: (row: any) =>
-      row.original.status === "inactive"
-        ? "bg-error/10"
-        : "bg-white dark:bg-gray-900 shadow-sm ring-1 ring-default/10 rounded-lg transition-shadow",
+      "bg-white dark:bg-gray-900 shadow-sm ring-1 ring-default/10 rounded-lg transition-shadow",
   },
 };
 
+/* ================== Status Labels ================== */
+const statusLabels: Record<string, string> = {
+  present: "حاضر",
+  absent: "غائب",
+  late: "متأخر",
+  early_leave: "مغادرة مبكرة",
+  half_day: "نصف يوم",
+  incomplete: "مكتمل",
+};
+
+/* ================== Enhanced Data ================== */
+const enhancedRecords = computed(() =>
+  records.value.map((record) => ({
+    ...record,
+    // employee_name: record.employee.name_ar,
+    status_label: statusLabels[record.status] ?? record.status,
+    status_label_re:
+      statusLabels[record.attendance_status] ?? record.attendance_status,
+  })),
+);
+
 /* ================== Columns ================== */
 const columns = computed(() =>
-  employees.value.length
-    ? generateColumns<Employee>(
-        employees.value,
+  enhancedRecords.value.length
+    ? generateColumns<any>(
+        enhancedRecords.value,
         {
           labels: {
-            full_name: "الاسم",
-            email: "البريد الإلكتروني",
-            status: "الحالة",
-            branch: "الفرع",
-            department: "القسم",
+            employee: "الموظف",
+            date: "التاريخ",
+            device_id: "الجهاز",
+            check_in_time: "وقت الدخول",
+            check_out_time: "وقت الخروج",
+            required_time: "الساعات المطلوبة",
+            work_time: "ساعات العمل الفعلية",
+            is_late: "دخول متأخر",
+            late_time: "مدة التأخير", // تم التعديل
+            is_early_leave: "خروج مبكر",
+            early_leave_time: "مدة الخروج المبكر", // تم التعديل
+            overtime_time: "ساعات العمل الإضافي",
+            undertime_time: "ساعات التقصير",
+            status_label_re: "حالة الحضور",
+            status_label: "حالة السجل",
             action: "العمليات",
-            pin: "الرقم التعريفي",
-            user_group: "مجموعة المستخدمين",
-            current_work_schedule: "نظام الدوام الحالي",
-            upcoming_work_schedule: "نظام الدوام القادم",
-            payroll_system: "نظام الراتب ",
-
           },
           exclude: [
-            "national_id",
-            "position",
-            "image",
+            "status",
             "created_at",
             "updated_at",
-            "first_name",
-            "last_name",
+            "attendance_status",
+            "check_in",
+            "check_out",
+            "early_leave_minutes",
+            "late_minutes",
+            "overtime_minutes",
+            "undertime_minutes",
+            "work_minutes",
+            "required_minutes",
           ],
           columns: {
-            email: { filterable: true, hidden: true },
-            full_name: {
+            employee: {
+              type: "object",
+              valueKey: "full_name",
               filterable: true,
-              cell: ({ row }) => `${row.first_name} ${row.last_name}`,
             },
-            status: { type: "status", cell: ({ getValue }) => getValue() },
-            phone: { hidden: true },
-            branch: { type: "object", valueKey: "name_ar" },
-            current_work_schedule: { type: "object", valueKey: "name_ar" },
-            upcoming_work_schedule: { type: "object", valueKey: "name_ar" },
-            payroll_system: { type: "object", valueKey: "name" },
-            department: { type: "object", valueKey: "name_ar" },
-            user_group: { type: "object", valueKey: "name_ar" },
-            birth_date: { hidden: true },
+            date: { type: "date" },
+            check_in: { type: "date" },
+            check_out: { type: "date" },
+            undertime_time: { type: "number" },
+            // required_minutes: { type: "number" },
+            // overtime_minutes: { type: "number" },
+            // undertime_minutes: { type: "number" },
+            status_label: { filterable: true },
             action: { hideable: false },
           },
         },
-        UButton
+        UButton,
       )
-    : []
+    : [],
 );
 
 /* ================== Effects ================== */
 watch(
-  employees,
+  records,
   (val) => {
     if (val.length) firstLoad.value = false;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 /* ================== Handlers ================== */
@@ -134,50 +159,44 @@ const onColumnFiltersChange = (val: any[]) => (columnFilters.value = val);
 /* ================== Form Management ================== */
 const editingId = ref<number | null>(null);
 const mode = computed(() => (editingId.value ? "edit" : "create"));
-const formModel = reactive<EmployeeForm>(emptyEmployeeForm());
+const formModel = reactive<AttendanceForm>(emptyAttendanceForm());
 
 const openDrower = (payload: { title: string; row?: unknown }) => {
   (document.activeElement as HTMLElement)?.blur();
   open.value = !open.value;
   titleDrower.value = payload.title;
 
-  if (payload.row && isEmployeeRow(payload.row)) {
+  if (payload.row && isAttendanceRow(payload.row)) {
     editingId.value = payload.row.id;
-
-    const [first_name, ...rest] = (payload.row.full_name ?? "").split(" ");
-    const last_name = rest.join(" ");
-
     Object.assign(formModel, {
-      first_name,
-      last_name,
-      email: payload.row.email,
-      phone: payload.row.phone,
+      employee_id: payload.row.employee.id,
+      date: payload.row.date || null,
+      check_in: payload.row.check_in || null,
+      check_out: payload.row.check_out || null,
+      work_minutes: payload.row.work_minutes,
+      required_minutes: payload.row.required_minutes,
+      overtime_minutes: payload.row.overtime_minutes,
+      attendance_status: payload.row.attendance_status,
+      late_minutes: payload.row.late_minutes,
+      early_leave_minutes: payload.row.early_leave_minutes,
+      is_late: payload.row.is_late,
+      is_early_leave: payload.row.is_early_leave,
       status: payload.row.status,
-      position: payload.row.position,
-      national_id: payload.row.national_id,
-      pin: payload.row.pin,
-      birth_date: payload.row.birth_date,
-      branch_id: payload.row.branch?.id ?? 0,
-      user_group_id: payload.row.user_group?.id ?? 0,
-      department_id: payload.row.department?.id ?? 0,
-       image: null,
     });
-
-    console.log(formModel)
   } else {
     editingId.value = null;
-    Object.assign(formModel, emptyEmployeeForm());
+    Object.assign(formModel, emptyAttendanceForm());
   }
 };
 
 const formRef = ref<{ submit: () => void } | null>(null);
 
-const onSubmit = async (value: EmployeeForm) => {
+const onSubmit = async (value: AttendanceForm) => {
   try {
     if (editingId.value) {
-      await updateEmployee(editingId.value, value);
+      await updateRecord(editingId.value, value);
     } else {
-      await createEmployee(value);
+      await createRecord(value);
     }
     open.value = false;
   } catch (error) {
@@ -185,8 +204,8 @@ const onSubmit = async (value: EmployeeForm) => {
   }
 };
 
-const onDeleteEmployeeHandler = async (id: number) => {
-  await deleteEmployee(id);
+const onDeleteRecordHandler = async (id: number) => {
+  await deleteRecord(id);
 };
 </script>
 
@@ -202,26 +221,26 @@ const onDeleteEmployeeHandler = async (id: number) => {
   <AppTable
     v-else
     :columns="columns"
-    :data="employees"
+    :data="enhancedRecords"
     :total="safePagination.total"
     :page="page"
     :page-sizes="pageSizes"
     :page-size="pageSize"
     :loading="pending"
-    :status-map="statusMap"
     :meta="meta"
     :sorting="sorting"
     :global-filter="search"
     :column-filters="columnFilters"
-    title-btn-create="إضافة موظف"
-    title-btn-icon="material-symbols:group-add-outline-rounded"
-    title-btn-edit="تعديل موظف"
+    :btnCreate="true"
+    title-btn-create="إضافة سجل حضور"
+    title-btn-icon="lucide:calendar-check"
+    title-btn-edit="تعديل سجل حضور"
     @update:page="onPageChange"
     @update:page-size="onPageSizeChange"
     @update:sorting="onSortingChange"
     @update:global-filter="onSearchGlobal"
     @update:column-filters="onColumnFiltersChange"
-    @delete:row="onDeleteEmployeeHandler"
+    @delete:row="onDeleteRecordHandler"
     @drower:open="openDrower"
     @update:data="openDrower"
   />
@@ -229,7 +248,7 @@ const onDeleteEmployeeHandler = async (id: number) => {
   <ClientOnly>
     <UDrawer
       v-model:open="open"
-      :description="`إدارة الموظفين`"
+      :description="`إدارة الحضور`"
       direction="left"
       :title="titleDrower"
       :ui="{
@@ -259,13 +278,12 @@ const onDeleteEmployeeHandler = async (id: number) => {
         </div>
 
         <ClientOnly>
-          <FormsEmployeeForm
+          <FormsAttendancesForm
             ref="formRef"
             v-model="formModel"
             :mode="mode"
             @submit="onSubmit"
             class="min-w-150 items-start"
-            :columns="2"
           />
         </ClientOnly>
       </template>

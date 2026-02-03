@@ -2,6 +2,7 @@
 import type { PayrollSystemForm } from "~/types/PayrollSystem";
 import type { Field } from "~/components/generic-form.vue";
 import { useFormModel } from "~/composables/useFormModel";
+import {payrollSystemSchema} from "~/schemas/payroll-system.schema"
 
 /* ================== Props / Emits ================== */
 const props = defineProps<{
@@ -157,6 +158,7 @@ defineExpose({
       ref="formRef"
       v-model="model"
       :fields="fields"
+      :schema="payrollSystemSchema"
       :loading="loading"
       :columns="props.columns ?? 2"
       @submit="emit('submit', $event)"

@@ -2,8 +2,8 @@
 import { generateColumns } from "~/utils/generateColumns";
 import type { PayrollSystem, PayrollSystemForm } from "~/types/PayrollSystem";
 import { emptyPayrollSystemForm } from "~/types/PayrollSystem";
-import { isPayrollSystemRow } from "~/composables/PayrollSystem/isPayrollSystemRow";
-import { usePayrollSystems } from "~/composables/PayrollSystem/usePayrollSystems";
+import { isPayrollSystemRow } from "~/composables/payrollSystem/isPayrollSystemRow";
+import { usePayrollSystems } from "~/composables/payrollSystem/usePayrollSystems";
 
 const UButton = resolveComponent("UButton");
 
@@ -83,7 +83,6 @@ const columns = computed(() =>
             action: "العمليات",
           },
           exclude: [
-            "id",
             "salary_type",
             "deduct_missing_time",
             "is_active",

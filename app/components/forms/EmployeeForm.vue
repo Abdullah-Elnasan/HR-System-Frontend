@@ -56,12 +56,12 @@ const birthDateCalendar = computed({
 
 
 /* ================== Start Date Handling ================== */
-const startsAtCalendar = computed({
-  get: (): CalendarDate => stringToCalendarDate(model.value.starts_at),
-  set: (value: CalendarDate) => {
-    model.value.starts_at = value.toString();
-  },
-});
+// const startsAtCalendar = computed({
+//   get: (): CalendarDate => stringToCalendarDate(model.value.starts_at),
+//   set: (value: CalendarDate) => {
+//     model.value.starts_at = value.toString();
+//   },
+// });
 
 
 /* ================== Fields ================== */
@@ -198,12 +198,32 @@ const createOnlyFields: Field<EmployeeForm>[] = [
       icon: "lucide:folder-tree",
     },
   },
-      {
-    name: "starts_at",
-    label: "تاريخ تفعيل نظام الدوام",
+  {
+    name: "payroll_system_id",
+    label: "نظام الراتب",
     colSpan: 1,
-    component: "custom",
+    component: "select-menu",
+    searchable: true,
+    items: [],
+    searchApi: async (q: string) => {
+      const res: any = await $fetch("/api/payroll-systems/payroll-systems", {
+        params: { "filter[search]": q },
+      });
+      return res.data;
+    },
+    componentProps: {
+      valueKey: "id",
+      labelKey: "name",
+      placeholder: "نظام الدوام",
+      icon: "lucide:folder-tree",
+    },
   },
+  //     {
+  //   name: "starts_at",
+  //   label: "تاريخ تفعيل نظام الدوام",
+  //   colSpan: 1,
+  //   component: "custom",
+  // },
 
 ];
 
@@ -238,6 +258,7 @@ const loadingDepartments = ref(false);
 const loadingBranches = ref(false);
 const loadingUserGroups = ref(false);
 const loadingWorkSchedules = ref(false);
+const loadingfetchPayrollSystems = ref(false);
 
 
 /* ================== Fetch Functions ================== */
@@ -286,10 +307,20 @@ const fetchWorkSchedules = async () => {
   }
   loadingWorkSchedules.value = false;
 };
+const fetchPayrollSystems= async () => {
+  loadingfetchPayrollSystems.value = true;
+  const res: any = await $fetch("/api/payroll-systems/payroll-systems");
+  console.log(res);
+  const field = createOnlyFields.find((f) => f.name === "payroll_system_id");
+  if (field) {
+    field.items = [...res.data];
+  }
+  loadingfetchPayrollSystems.value = false;
+};
 
 
 const ensureItemLoaded = async (
-  fieldName: "department_id" | "branch_id" | "user_group_id" | "work_schedule_id",
+  fieldName: "department_id" | "branch_id" | "user_group_id" | "work_schedule_id" | "payroll_system_id",
   itemId: number,
 ) => {
   const field = baseFields.find((f) => f.name === fieldName);
@@ -321,14 +352,16 @@ defineExpose({
 });
 
 
-await Promise.all([
+onMounted(()=>{
+  Promise.all([
   fetchDepartments(),
   fetchBranches(),
   fetchUserGroups(),
   fetchWorkSchedules(),
+  fetchPayrollSystems()
 ]);
 
-
+})
 if (props.mode === "edit") {
   const loadPromises = [];
 
@@ -377,6 +410,7 @@ if (props.mode === "edit") {
         branch_id: loadingBranches,
         user_group_id: loadingUserGroups,
         work_schedule_id: loadingWorkSchedules,
+        payroll_system_id: loadingfetchPayrollSystems,
       }"
       @submit="emit('submit', $event)"
       dir="rtl"
@@ -403,7 +437,7 @@ if (props.mode === "edit") {
       </template>
 
       <!-- مكون تاريخ تفعيل نظام الدوام -->
-      <template #field-starts_at="{ model: slotModel }">
+      <!-- <template #field-starts_at="{ model: slotModel }">
         <UInputDate v-model="startsAtCalendar">
           <template #trailing>
             <UPopover>
@@ -421,7 +455,7 @@ if (props.mode === "edit") {
             </UPopover>
           </template>
         </UInputDate>
-      </template>
+      </template> -->
     </GenericForm>
   </ClientOnly>
 </template>

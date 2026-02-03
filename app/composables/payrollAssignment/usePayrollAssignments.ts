@@ -1,16 +1,16 @@
-// ~/composables/work-schedule-assignments/useWorkScheduleAssignments.ts
-import { useWorkScheduleAssignmentsStore } from '~/stores/workScheduleAssignments/WorkScheduleAssignment'
-import type { WorkScheduleAssignmentForm } from '~/types/workScheduleAssignments'
+// ~/composables/payroll-assignments/usePayrollAssignments.ts
+import { usePayrollAssignmentsStore } from '~/stores/payrollAssignments/payrollAssignments'
+import type { PayrollAssignmentForm } from '~/types/payrollAssignments'
 import { usePaginatedList } from '~/composables/usePaginatedList'
 
-export function useWorkScheduleAssignments() {
-  const store = useWorkScheduleAssignmentsStore()
+export function usePayrollAssignments() {
+  const store = usePayrollAssignmentsStore()
   const toast = useToast()
 
   /* ================== Paginated List ================== */
   const list = usePaginatedList({
-    key: 'work-schedule-assignments',
-    endpoint: '/api/work-schedule-assignments/work-schedule-assignments',
+    key: 'payroll-assignments',
+    endpoint: '/api/payroll-assignments/payroll-assignments',
     store: {
       setData: store.setAssignments,
     },
@@ -43,7 +43,7 @@ export function useWorkScheduleAssignments() {
   }
 
   /* ================== Create ================== */
-  async function createAssignment(payload: Partial<WorkScheduleAssignmentForm>) {
+  async function createAssignment(payload: PayrollAssignmentForm) {
     try {
       return await store.createAssignment(payload)
     } catch (error: any) {
@@ -57,7 +57,7 @@ export function useWorkScheduleAssignments() {
   }
 
   /* ================== Update ================== */
-  async function updateAssignment(id: number, payload: Partial<WorkScheduleAssignmentForm>) {
+  async function updateAssignment(id: number, payload: Partial<PayrollAssignmentForm>) {
     try {
       return await store.updateAssignment(id, payload)
     } catch (error: any) {

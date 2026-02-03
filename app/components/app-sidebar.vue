@@ -1,7 +1,10 @@
 <template>
   <UDashboardSidebar
     collapsible
-    :ui="{ footer: 'border-b border-default', root: ' max-w-64 border-2 border-default' }"
+    :ui="{
+      footer: 'border-b border-default',
+      root: ' max-w-64 border-2 border-default',
+    }"
     :min-size="22"
     :default-size="35"
     :max-size="40"
@@ -16,7 +19,7 @@
 
     <!-- الهيدر -->
     <template #header="{ collapsed }">
-      <AppLogo width="100"  v-if="!collapsed" class="" />
+      <AppLogo width="100" v-if="!collapsed" class="" />
     </template>
 
     <!-- المحتوى -->
@@ -64,33 +67,89 @@ import type { NavigationMenuItem } from "@nuxt/ui";
 
 const items: NavigationMenuItem[][] = [
   [
-    { label: "الصفحة الرئيسية", icon: "i-lucide-house", to:'/'},
-    { label: "Inbox", icon: "i-lucide-inbox", badge: "4" },
-    { label: "إدارة الموظفين", icon: "i-lucide-users" , to: '/employees' },
-    { label: "إدارة الأفرع", icon: "gravity-ui:branches-down" , to: '/branches' },
-    { label: "إدارة الأقسام", icon: "lucide:folder-tree" , to: '/departments' },
-    { label: "إدارة الرواتب", icon: "lucide:folder-tree" , to: '/payroll-systems' },
-    // { label: "إدارة أنظمة الدوام", icon: "lucide:folder-tree" , to: '/work-schedules' },
-    { label: "إدارة مجموعات المستخدمين", icon: "streamline-flex:user-collaborate-group-solid" , to: '/user-groups' },
-        {
-      label: "إدارة أنظمة الدوام", icon: "lucide:folder-tree" , to: '/work-schedules',
-      defaultOpen:true ,
+    { label: "الصفحة الرئيسية", icon: "i-lucide-house", to: "/" },
+    // { label: "Inbox", icon: "i-lucide-inbox", badge: "4" },
+    { label: "إدارة الموظفين", icon: "i-lucide-users", to: "/employees" },
+    {
+      label: "إدارة الأفرع",
+      icon: "gravity-ui:branches-down",
+      to: "/branches",
+    },
+    { label: "إدارة الأقسام", icon: "lucide:folder-tree", to: "/departments" },
+    // {
+    //   label: "إدارة السجلات",
+    //   icon: "lucide:folder-tree",
+    //   to: "/attendances/attendances-today",
+    // },
+    {
+      label: "إدارة مجموعات المستخدمين",
+      icon: "streamline-flex:user-collaborate-group-solid",
+      to: "/user-groups",
+    },
+    {
+      label: "إدارة أنظمة الدوام",
+      icon: "lucide:folder-tree",
+      // to: "/work-schedules",
+      defaultOpen: false,
       children: [
-        { label: "إدارة أنظمة الدوام", icon: "lucide:folder-tree" , to: '/work-schedules/manage-assign' },
-
+        {
+          label: "أنظمة الدوام",
+          icon: "lucide:folder-tree",
+          to: "/work-schedules",
+        },
+        {
+          label: "إسناد الدوام",
+          icon: "lucide:folder-tree",
+          to: "/work-schedules/manage-assign",
+        },
       ],
     },
     {
-      label: "Settings",
-      icon: "i-lucide-settings",
-      defaultOpen: true,
+      label: "إدارة أنظمة الرواتب",
+      icon: "lucide:folder-tree",
+      // to: "/payroll-systems",
+      defaultOpen: false,
       children: [
-        { label: "General" },
-        { label: "Members" },
-        { label: "Notifications" },
+        {
+          label: "أنظمة الرواتب",
+          icon: "lucide:folder-tree",
+          to: "/payroll-systems",
+        },
+        {
+          label: "إسناد الرواتب",
+          icon: "lucide:folder-tree",
+          to: "/payroll-systems/manage-assign",
+        },
       ],
     },
-
+    {
+      label: "إدارة السجلات ",
+      icon: "lucide:folder-tree",
+      // to: "/attendances/attendances-today",
+      defaultOpen: false,
+      children: [
+        {
+          label: "سجلات حضور اليوم",
+          icon: "lucide:folder-tree",
+          to: "/attendances/attendances-today",
+        },
+        {
+          label: "أرشيف سجلات الحضور",
+          icon: "lucide:folder-tree",
+          to: "/attendances",
+        },
+      ],
+    },
+    // {
+    //   label: "Settings",
+    //   icon: "i-lucide-settings",
+    //   defaultOpen: true,
+    //   children: [
+    //     { label: "General" },
+    //     { label: "Members" },
+    //     { label: "Notifications" },
+    //   ],
+    // },
   ],
   [
     {

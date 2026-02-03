@@ -21,6 +21,7 @@ export type Employee = {
   user_group: { id: number; name_ar: string | null };
   current_work_schedule: { id: number; name_ar: string | null };
   upcoming_work_schedule: { id: number; name_ar: string | null };
+  payroll_system: { id: number; name: string | null };
   image?: string | null;
   created_at: string;
   updated_at: string;
@@ -41,11 +42,12 @@ export type EmployeeForm = {
   national_id: string;
   pin: number;
   birth_date?: string;
-  starts_at?: string;
+  // starts_at?: string;
   branch_id: number;
   user_group_id: number;
   department_id?: number;
   work_schedule_id?: number;
+  payroll_system_id?: number;
   image?: File | null;
 };
 

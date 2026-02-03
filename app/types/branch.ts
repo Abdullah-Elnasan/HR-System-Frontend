@@ -13,6 +13,7 @@ export type Branch = {
   location_ar: string | null;
   current_work_schedule: { id: number; name_ar: string | null };
   upcoming_work_schedule: { id: number; name_ar: string | null };
+  payroll_system: { id: number; name: string | null };
   created_at: string;
   updated_at: string;
   employees_count: number;
@@ -34,7 +35,8 @@ export type BranchForm = {
 
   // ⬇️ جديد
   work_schedule_id?: number | null;
-  starts_at?: string | null;
+  payroll_system_id?: number | null;
+  // starts_at?: string | null;
 };
 
 /**
@@ -48,7 +50,7 @@ export const emptyBranchForm = (): BranchForm => ({
   location_ar: "",
   location_en: "",
   work_schedule_id: null,
-  starts_at: null,
+  // starts_at: null,
 });
 
 

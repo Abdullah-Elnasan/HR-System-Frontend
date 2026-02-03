@@ -18,3 +18,11 @@ export type PaginatedResponse<T> = {
 };
 
 
+export type TableActionsConfig = {
+  copy?: boolean;
+  view?: boolean;
+  edit?: boolean;
+  delete?: boolean;
+};
+
+

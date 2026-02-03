@@ -1,5 +1,5 @@
 // ~/composables/work-schedule-assignments/isWorkScheduleAssignmentRow.ts
-import type { WorkScheduleAssignmentRow } from "~/types/workScheduleAssignment";
+import type { WorkScheduleAssignmentRow } from "~/types/workScheduleAssignments";
 
 export function isWorkScheduleAssignmentRow(row: unknown): row is WorkScheduleAssignmentRow {
   return (
