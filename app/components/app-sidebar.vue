@@ -123,6 +123,19 @@ const items: NavigationMenuItem[][] = [
       ],
     },
     {
+      label: "إدارة سجلات الرواتب",
+      icon: "lucide:folder-tree",
+      // to: "/payroll-systems",
+      defaultOpen: false,
+      children: [
+        {
+          label: "قوائم الرواتب",
+          icon: "lucide:folder-tree",
+          to: "/payroll/payroll-items",
+        },
+      ],
+    },
+    {
       label: "إدارة السجلات ",
       icon: "lucide:folder-tree",
       // to: "/attendances/attendances-today",

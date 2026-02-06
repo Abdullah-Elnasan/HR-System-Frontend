@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { generateColumns } from "~/utils/generateColumns";
-import type { Employee, EmployeeForm } from "~/types/employee";
-import { emptyEmployeeForm } from "~/types/employee";
-import { useEmployees } from "~/composables/employee/useEmployees";
-import { isEmployeeRow } from "~/composables/employee/isEmployeeRow";
+import type { PayrollItem, PayrollItemForm } from "~/types/payrolls/payrollItem";
+import { emptyPayrollItemForm } from "~/types/payrolls/payrollItem";
+import { isPayrollItemRow } from "~/composables/payrollItems/isPayrollItemRow";
+import { usePayrollItems } from "~/composables/payrollItems/usePayrollItems";
 
 const UButton = resolveComponent("UButton");
 
 definePageMeta({
   layout: "dashboard",
-  title: "إدارة الموظفين",
+  title: "إدارة سجلات الرواتب",
   keepalive: false,
 });
 
@@ -24,17 +24,17 @@ const {
   setPage,
   setPageSize,
   setSearch,
-  deleteEmployee,
-  createEmployee,
-  updateEmployee,
-} = useEmployees();
+  deleteItem,
+  // createRecord,
+  updateItem,
+} = usePayrollItems();
 
 const open = ref(false);
 const titleDrower = ref("");
 
 /* ================== Computed ================== */
-const employees = computed<Employee[]>(() => data.value ?? []);
-
+const items = computed<PayrollItem[]>(() => data.value ?? []);
+console.log(items.value);
 const safePagination = computed(() => ({
   total: pagination.value?.total ?? 0,
   per_page: pagination.value?.per_page ?? pageSize.value,
@@ -48,65 +48,57 @@ const sorting = ref<any[]>([]);
 const columnFilters = ref<any[]>([]);
 const firstLoad = ref(true);
 
-/* ================== UI ================== */
-const statusMap: Record<string, { label: string; color: string }> = {
-  active: { label: "نشط", color: "success" },
-  inactive: { label: "غير نشط", color: "error" },
-};
-
 const meta = {
   class: {
     tr: (row: any) =>
-      row.original.status === "inactive"
-        ? "bg-error/10"
-        : "bg-white dark:bg-gray-900 shadow-sm ring-1 ring-default/10 rounded-lg transition-shadow",
+      "bg-white dark:bg-gray-900 shadow-sm ring-1 ring-default/10 rounded-lg transition-shadow",
   },
 };
 
+/* ================== Enhanced Data ================== */
+const enhancedItems = computed(() =>
+  items.value.map((item) => ({
+    ...item,
+    // payroll_run_name: item.payroll_run_name,
+    employee_name: item.employee.name_ar,
+  }))
+);
+
 /* ================== Columns ================== */
 const columns = computed(() =>
-  employees.value.length
-    ? generateColumns<Employee>(
-        employees.value,
+  enhancedItems.value.length
+    ? generateColumns<any>(
+        enhancedItems.value,
         {
           labels: {
-            full_name: "الاسم",
-            email: "البريد الإلكتروني",
-            status: "الحالة",
-            branch: "الفرع",
-            department: "القسم",
+            payroll_run_name: "دورة الرواتب",
+            employee_name: "الموظف",
+            period_start: "بداية الفترة",
+            period_end: "نهاية الفترة",
+            base_amount: "المبلغ الأساسي",
+            overtime_amount: "مبلغ العمل الإضافي",
+            currency: "العملة",
+            manual_adjustment: "التعديل اليدوي",
+            adjustment_note: "ملاحظة التعديل",
+            total_amount: "المبلغ الإجمالي",
             action: "العمليات",
-            pin: "الرقم التعريفي",
-            user_group: "مجموعة المستخدمين",
-            current_work_schedule: "نظام الدوام الحالي",
-            upcoming_work_schedule: "نظام الدوام القادم",
-            payroll_system: "نظام الراتب ",
-
           },
           exclude: [
-            "national_id",
-            "position",
-            "image",
-            "created_at",
-            "updated_at",
-            "first_name",
-            "last_name",
+            "id",
+            "payroll_run",
+            "employee",
           ],
           columns: {
-            email: { filterable: true, hidden: true },
-            full_name: {
-              filterable: true,
-              cell: ({ row }) => `${row.first_name} ${row.last_name}`,
-            },
-            status: { type: "status", cell: ({ getValue }) => getValue() },
-            phone: { hidden: true },
-            branch: { type: "object", valueKey: "name_ar" },
-            current_work_schedule: { type: "object", valueKey: "name_ar" },
-            upcoming_work_schedule: { type: "object", valueKey: "name_ar" },
-            payroll_system: { type: "object", valueKey: "name" },
-            department: { type: "object", valueKey: "name_ar" },
-            user_group: { type: "object", valueKey: "name_ar" },
-            birth_date: { hidden: true },
+            payroll_run_name: { filterable: true },
+            employee_name: { filterable: true },
+            period_start: { type: "date" },
+            period_end: { type: "date" },
+            base_amount: { type: "number" },
+            overtime_amount: { type: "number" },
+            currency: { filterable: true },
+            manual_adjustment: { type: "number" },
+            adjustment_note: { hidden: true },
+            total_amount: { type: "number" },
             action: { hideable: false },
           },
         },
@@ -117,7 +109,7 @@ const columns = computed(() =>
 
 /* ================== Effects ================== */
 watch(
-  employees,
+  items,
   (val) => {
     if (val.length) firstLoad.value = false;
   },
@@ -134,50 +126,41 @@ const onColumnFiltersChange = (val: any[]) => (columnFilters.value = val);
 /* ================== Form Management ================== */
 const editingId = ref<number | null>(null);
 const mode = computed(() => (editingId.value ? "edit" : "create"));
-const formModel = reactive<EmployeeForm>(emptyEmployeeForm());
+const formModel = reactive<PayrollItemForm>(emptyPayrollItemForm());
 
 const openDrower = (payload: { title: string; row?: unknown }) => {
   (document.activeElement as HTMLElement)?.blur();
   open.value = !open.value;
   titleDrower.value = payload.title;
 
-  if (payload.row && isEmployeeRow(payload.row)) {
+  if (payload.row && isPayrollItemRow(payload.row)) {
     editingId.value = payload.row.id;
-
-    const [first_name, ...rest] = (payload.row.full_name ?? "").split(" ");
-    const last_name = rest.join(" ");
-
     Object.assign(formModel, {
-      first_name,
-      last_name,
-      email: payload.row.email,
-      phone: payload.row.phone,
-      status: payload.row.status,
-      position: payload.row.position,
-      national_id: payload.row.national_id,
-      pin: payload.row.pin,
-      birth_date: payload.row.birth_date,
-      branch_id: payload.row.branch?.id ?? 0,
-      user_group_id: payload.row.user_group?.id ?? 0,
-      department_id: payload.row.department?.id ?? 0,
-       image: null,
+      payroll_run_id: payload.row.payroll_run_id,
+      employee_id: payload.row.employee.id,
+      period_start: payload.row.period_start || null,
+      period_end: payload.row.period_end || null,
+      base_amount: payload.row.base_amount,
+      overtime_amount: payload.row.overtime_amount,
+      currency: payload.row.currency,
+      manual_adjustment: payload.row.manual_adjustment,
+      adjustment_note: payload.row.adjustment_note || "",
+      total_amount: payload.row.total_amount,
     });
-
-    console.log(formModel)
   } else {
     editingId.value = null;
-    Object.assign(formModel, emptyEmployeeForm());
+    Object.assign(formModel, emptyPayrollItemForm());
   }
 };
 
 const formRef = ref<{ submit: () => void } | null>(null);
 
-const onSubmit = async (value: EmployeeForm) => {
+const onSubmit = async (value: PayrollItemForm) => {
   try {
     if (editingId.value) {
-      await updateEmployee(editingId.value, value);
+      await updateItem(editingId.value, value);
     } else {
-      await createEmployee(value);
+      // await createRecord(value);
     }
     open.value = false;
   } catch (error) {
@@ -185,8 +168,8 @@ const onSubmit = async (value: EmployeeForm) => {
   }
 };
 
-const onDeleteEmployeeHandler = async (id: number) => {
-  await deleteEmployee(id);
+const onDeleteRecordHandler = async (id: number) => {
+  await deleteItem(id);
 };
 </script>
 
@@ -202,27 +185,25 @@ const onDeleteEmployeeHandler = async (id: number) => {
   <AppTable
     v-else
     :columns="columns"
-    :data="employees"
-    :btn-create="true"
+    :data="enhancedItems"
     :total="safePagination.total"
     :page="page"
     :page-sizes="pageSizes"
     :page-size="pageSize"
     :loading="pending"
-    :status-map="statusMap"
     :meta="meta"
     :sorting="sorting"
     :global-filter="search"
     :column-filters="columnFilters"
-    title-btn-create="إضافة موظف"
-    title-btn-icon="material-symbols:group-add-outline-rounded"
-    title-btn-edit="تعديل موظف"
+    title-btn-create="إضافة سجل راتب"
+    title-btn-icon="lucide:receipt-text"
+    title-btn-edit="تعديل سجل راتب"
     @update:page="onPageChange"
     @update:page-size="onPageSizeChange"
     @update:sorting="onSortingChange"
     @update:global-filter="onSearchGlobal"
     @update:column-filters="onColumnFiltersChange"
-    @delete:row="onDeleteEmployeeHandler"
+    @delete:row="onDeleteRecordHandler"
     @drower:open="openDrower"
     @update:data="openDrower"
   />
@@ -230,7 +211,7 @@ const onDeleteEmployeeHandler = async (id: number) => {
   <ClientOnly>
     <UDrawer
       v-model:open="open"
-      :description="`إدارة الموظفين`"
+      :description="`إدارة سجلات الرواتب`"
       direction="left"
       :title="titleDrower"
       :ui="{
@@ -260,13 +241,12 @@ const onDeleteEmployeeHandler = async (id: number) => {
         </div>
 
         <ClientOnly>
-          <FormsEmployeeForm
+          <FormsPayrollRecordForm
             ref="formRef"
             v-model="formModel"
             :mode="mode"
             @submit="onSubmit"
             class="min-w-150 items-start"
-            :columns="2"
           />
         </ClientOnly>
       </template>
