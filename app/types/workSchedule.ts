@@ -42,6 +42,7 @@ export interface WorkSchedule {
   type: WorkScheduleType;
   is_active: boolean;
   is_uniform: boolean;
+  rules: any[];
   fixed_rules?: FixedRule[];
   flexible_rules?: FlexibleRule[];
   created_at: string;
@@ -108,6 +109,7 @@ export interface CustomFlexibleDay {
 
 export interface WorkScheduleForm extends WorkScheduleBasicForm {
   is_uniform: boolean ;
+  rules: any[],
   uniform_fixed?: UniformFixedSchedule;
   uniform_flexible?: UniformFlexibleSchedule;
   custom_fixed_days?: CustomFixedDay[];
@@ -122,6 +124,7 @@ export function emptyWorkScheduleForm(): WorkScheduleForm {
   return {
     name_ar: "",
     name_en: "",
+    rules: [],
     type: "fixed",
     description_ar: "",
     description_en: "",
@@ -181,6 +184,7 @@ export type WorkSchedulePayload = {
   type: WorkScheduleType;
   description_ar?: string;
   description_en?: string;
+  rules?: any[];
   is_active: boolean;
   is_uniform: boolean;  // ✅ إضافة هذا الحقل
   fixed_rules?: FixedRule[];
@@ -200,6 +204,7 @@ export function transformFormToPayload(
     type: form.type,
     description_ar: form.description_ar || undefined,
     description_en: form.description_en || undefined,
+    rules: form.rules || undefined,
     is_active: form.is_active,
     is_uniform: form.is_uniform,  // ✅ إضافة هذا
   };
@@ -305,6 +310,7 @@ export function transformScheduleToForm(
     name_ar: schedule.name_ar,
     name_en: schedule.name_en,
     type: schedule.type,
+    rules:schedule.rules,
     description_ar: schedule.description_ar ?? "",
     description_en: schedule.description_en ?? "",
     is_active: schedule.is_active,

@@ -6,6 +6,7 @@ export function isPayrollItemRow(row: unknown): row is PayrollItemRow {
     row !== null &&
     "id" in row &&
     "employee" in row &&
-    "payroll_run" in row
+    "payroll_run_id" in row &&
+    "manual_adjustment" in row
   );
 }

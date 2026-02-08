@@ -70,6 +70,7 @@ const columns = computed(() =>
             "name_en",
             "description_en",
             "description_ar",
+            "rules",
             "created_at",
             "updated_at",
             "fixed_rules",
@@ -209,6 +210,7 @@ const onViewRow = (id: number) => {
     :columns="columns"
     :data="workSchedules"
     :total="safePagination.total"
+    :btn-create="true"
     :page="page"
     :page-sizes="pageSizes"
     :page-size="pageSize"

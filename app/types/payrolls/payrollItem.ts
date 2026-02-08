@@ -10,7 +10,7 @@ export type Currency = "USD" | "EUR" | "SAR" | "AED" | "EGP" | "JOD";
  */
 export type EmployeeNested = {
   id: number;
-  name_ar: string;
+  full_name: string;
 };
 
 /**

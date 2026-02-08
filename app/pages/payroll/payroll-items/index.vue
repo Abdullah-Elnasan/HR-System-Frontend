@@ -60,7 +60,7 @@ const enhancedItems = computed(() =>
   items.value.map((item) => ({
     ...item,
     // payroll_run_name: item.payroll_run_name,
-    employee_name: item.employee.name_ar,
+    employee_name: item.employee.full_name,
   }))
 );
 
@@ -72,10 +72,12 @@ const columns = computed(() =>
         {
           labels: {
             payroll_run_name: "دورة الرواتب",
+            id: "ID",
             employee_name: "الموظف",
             period_start: "بداية الفترة",
             period_end: "نهاية الفترة",
             base_amount: "المبلغ الأساسي",
+            status: "حالة الاعتماد",
             overtime_amount: "مبلغ العمل الإضافي",
             currency: "العملة",
             manual_adjustment: "التعديل اليدوي",
@@ -84,9 +86,13 @@ const columns = computed(() =>
             action: "العمليات",
           },
           exclude: [
-            "id",
+            "payroll_run_id",
             "payroll_run",
             "employee",
+            "updated_at",
+            "created_at",
+            "employee_id"
+
           ],
           columns: {
             payroll_run_name: { filterable: true },
@@ -157,6 +163,8 @@ const formRef = ref<{ submit: () => void } | null>(null);
 
 const onSubmit = async (value: PayrollItemForm) => {
   try {
+    console.log('sadfas')
+    console.log(editingId.value)
     if (editingId.value) {
       await updateItem(editingId.value, value);
     } else {
@@ -184,6 +192,7 @@ const onDeleteRecordHandler = async (id: number) => {
 
   <AppTable
     v-else
+    :actions="{copy:false, view:false,}"
     :columns="columns"
     :data="enhancedItems"
     :total="safePagination.total"
@@ -241,7 +250,7 @@ const onDeleteRecordHandler = async (id: number) => {
         </div>
 
         <ClientOnly>
-          <FormsPayrollRecordForm
+          <FormsPayrollItemsForm
             ref="formRef"
             v-model="formModel"
             :mode="mode"

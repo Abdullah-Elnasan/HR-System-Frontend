@@ -111,13 +111,15 @@ export const usePayrollItemsStore = defineStore("payrollItems", {
 
     /* ================== Update Record ================== */
     async updateItem(id: number, payload: Partial<PayrollItemForm> | FormData) {
+      console.log('updateItem')
       this.loading = true;
       this.error = null;
       const toast = useToast();
 
       try {
+        console.log(id)
         return await updateResource<PayrollItem>({
-          endpoint: `/api/payroll-records/${id}`,
+          endpoint: `/api/payroll-items/${id}`,
           payload,
           toast: useToast(),
           onSuccess: (data) => {
