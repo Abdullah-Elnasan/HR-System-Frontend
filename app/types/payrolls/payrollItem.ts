@@ -31,6 +31,7 @@ export type PayrollItem = {
   employee: EmployeeNested;
   period_start: string;
   period_end: string;
+  status: string;
   base_amount: number;
   overtime_amount: number;
   currency: Currency;
@@ -49,6 +50,7 @@ export type PayrollItemForm = {
   employee_id: number | null;
   period_start: string | null;
   period_end: string | null;
+  status: string | null;
   base_amount: number;
   overtime_amount: number;
   currency: Currency | "";
@@ -66,6 +68,7 @@ export const emptyPayrollItemForm = (): PayrollItemForm => ({
   employee_id: null,
   period_start: null,
   period_end: null,
+  status: null ,
   base_amount: 0,
   overtime_amount: 0,
   currency: "",

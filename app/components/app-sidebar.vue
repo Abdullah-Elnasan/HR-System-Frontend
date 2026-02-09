@@ -68,14 +68,38 @@ import type { NavigationMenuItem } from "@nuxt/ui";
 const items: NavigationMenuItem[][] = [
   [
     { label: "الصفحة الرئيسية", icon: "i-lucide-house", to: "/" },
-    // { label: "Inbox", icon: "i-lucide-inbox", badge: "4" },
-    { label: "إدارة الموظفين", icon: "i-lucide-users", to: "/employees" },
+
     {
-      label: "إدارة الأفرع",
-      icon: "gravity-ui:branches-down",
-      to: "/branches",
+      label: "الموظفين",
+      icon: "lucide:folder-tree",
+      // to: "/work-schedules",
+      defaultOpen: true,
+      children: [
+        {
+          label: "إدارة الموظفين",
+          icon: "i-lucide-users",
+          to: "/employees",
+        },
+        {
+          label: "الأفرع",
+          icon: "gravity-ui:branches-down",
+          to: "/employees/branches",
+        },
+        {
+          label: "الأقسام",
+          icon: "lucide:folder-tree",
+          to: "/employees/departments",
+        },
+      ],
     },
-    { label: "إدارة الأقسام", icon: "lucide:folder-tree", to: "/departments" },
+    // { label: "Inbox", icon: "i-lucide-inbox", badge: "4" },
+    // { label: "إدارة الموظفين", icon: "i-lucide-users", to: "/employees" },
+    // {
+    //   label: "إدارة الأفرع",
+    //   icon: "gravity-ui:branches-down",
+    //   to: "/branches",
+    // },
+    // { label: "إدارة الأقسام", icon: "lucide:folder-tree", to: "/departments" },
     // {
     //   label: "إدارة السجلات",
     //   icon: "lucide:folder-tree",
@@ -86,97 +110,177 @@ const items: NavigationMenuItem[][] = [
       icon: "streamline-flex:user-collaborate-group-solid",
       to: "/user-groups",
     },
-    {
-      label: "إدارة أنظمة الدوام",
-      icon: "lucide:folder-tree",
-      // to: "/work-schedules",
-      defaultOpen: false,
-      children: [
-        {
-          label: "أنظمة الدوام",
-          icon: "lucide:folder-tree",
-          to: "/work-schedules",
-        },
-        {
-          label: "إسناد الدوام",
-          icon: "lucide:folder-tree",
-          to: "/work-schedules/manage-assign",
-        },
-      ],
-    },
-    {
-      label: "إدارة أنظمة الرواتب",
-      icon: "lucide:folder-tree",
-      // to: "/payroll-systems",
-      defaultOpen: false,
-      children: [
-        {
-          label: "أنظمة الرواتب",
-          icon: "lucide:folder-tree",
-          to: "/payroll-systems",
-        },
-        {
-          label: "إسناد الرواتب",
-          icon: "lucide:folder-tree",
-          to: "/payroll-systems/manage-assign",
-        },
-      ],
-    },
-    {
-      label: "إدارة سجلات الرواتب",
-      icon: "lucide:folder-tree",
-      // to: "/payroll-systems",
-      defaultOpen: false,
-      children: [
-        {
-          label: "قوائم الرواتب",
-          icon: "lucide:folder-tree",
-          to: "/payroll/payroll-items",
-        },
-      ],
-    },
-    {
-      label: "إدارة السجلات ",
-      icon: "lucide:folder-tree",
-      // to: "/attendances/attendances-today",
-      defaultOpen: false,
-      children: [
-        {
-          label: "سجلات حضور اليوم",
-          icon: "lucide:folder-tree",
-          to: "/attendances/attendances-today",
-        },
-        {
-          label: "أرشيف سجلات الحضور",
-          icon: "lucide:folder-tree",
-          to: "/attendances",
-        },
-      ],
-    },
+
     // {
-    //   label: "Settings",
-    //   icon: "i-lucide-settings",
-    //   defaultOpen: true,
+    //   label: "إدارة أنظمة الدوام",
+    //   icon: "lucide:folder-tree",
+    //   // to: "/work-schedules",
+    //   defaultOpen: false,
     //   children: [
-    //     { label: "General" },
-    //     { label: "Members" },
-    //     { label: "Notifications" },
+    //     {
+    //       label: "أنظمة الدوام",
+    //       icon: "lucide:folder-tree",
+    //       to: "/work-schedules",
+    //     },
+    //     {
+    //       label: "إسناد الدوام",
+    //       icon: "lucide:folder-tree",
+    //       to: "/work-schedules/manage-assign",
+    //     },
     //   ],
     // },
-  ],
-  [
+    // {
+    //   label: "إدارة أنظمة الرواتب",
+    //   icon: "lucide:folder-tree",
+    //   // to: "/payroll-systems",
+    //   defaultOpen: true,
+    //   children: [
+    //     {
+    //       label: "أنظمة الرواتب",
+    //       icon: "lucide:folder-tree",
+    //       to: "/payroll-systems",
+    //     },
+    //     {
+    //       label: "إسناد الرواتب",
+    //       icon: "lucide:folder-tree",
+    //       to: "/payroll-systems/manage-assign",
+    //     },
+    //   ],
+    // },
+    // {
+    //   label: "إدارة سجلات الرواتب",
+    //   icon: "lucide:folder-tree",
+    //   // to: "/payroll-systems",
+    //   defaultOpen: true,
+    //   children: [
+    //     {
+    //       label: "قوائم الرواتب",
+    //       icon: "lucide:folder-tree",
+    //       to: "/payroll/payroll-items",
+    //     },
+    //     {
+    //       label: "قوائم الاعتماد",
+    //       icon: "lucide:folder-tree",
+    //       to: "/payroll/payroll-runs",
+    //     },
+    //   ],
+    // },
     {
-      label: "Feedback",
-      icon: "i-lucide-message-circle",
-      to: "https://github.com/nuxt-ui-templates/dashboard",
-      target: "_blank",
+      label: "الحضور والانصراف",
+      icon: "lucide:folder-tree",
+      defaultOpen: true,
+      children: [
+        // ⚙️ الإعدادات
+        {
+          label: "الإعدادات",
+          icon: "lucide:settings",
+          defaultOpen: true,
+
+          children: [
+            {
+              label: "أنظمة الدوام",
+              icon: "lucide:clock",
+              to: "/attendances/settings/work-schedules",
+            },
+            // {
+            //   label: "جداول الدوام",
+            //   icon: "lucide:calendar-clock",
+            //   to: "/attendance/settings/work-schedules",
+            // },
+            {
+              label: "إسناد الدوام",
+              icon: "lucide:link",
+              to: "/attendances/settings/manage-assign",
+            },
+          ],
+        },
+
+        // 📋 السجلات
+        {
+          label: "السجلات",
+          icon: "lucide:clipboard-list",
+          defaultOpen: true,
+
+          children: [
+            {
+              label: "حضور اليوم",
+              icon: "lucide:calendar-check",
+              to: "/attendances/today",
+            },
+            {
+              label: "سجلات الحضور",
+              icon: "lucide:list",
+              to: "/attendances/",
+            },
+          ],
+        },
+      ],
     },
     {
-      label: "Help & Support",
-      icon: "i-lucide-info",
-      to: "https://github.com/nuxt/ui",
-      target: "_blank",
+      label: "الرواتب",
+      icon: "lucide:folder-tree",
+      defaultOpen: true,
+      children: [
+        // ⚙️ الإعدادات
+        {
+          label: "الإعدادات",
+          icon: "lucide:settings",
+          defaultOpen: true,
+
+          children: [
+            {
+              label: "أنظمة الرواتب",
+              icon: "lucide:clock",
+              to: "/payroll/settings/payroll-systems",
+            },
+            // {
+            //   label: "جداول الدوام",
+            //   icon: "lucide:calendar-clock",
+            //   to: "/attendance/settings/work-schedules",
+            // },
+            {
+              label: "إسناد الرواتب",
+              icon: "lucide:link",
+              to: "/payroll/settings/manage-assign",
+            },
+          ],
+        },
+
+        // 📋 السجلات
+        {
+          label: "القوائم",
+          icon: "lucide:clipboard-list",
+          defaultOpen: true,
+
+          children: [
+            {
+              label: "قائمة الشهر",
+              icon: "lucide:calendar-check",
+              to: "/payroll/payroll-items",
+            },
+            {
+              label: "قوائم الاعتماد",
+              icon: "lucide:list",
+              to: "/payroll/payroll-runs",
+            },
+          ],
+        },
+      ],
     },
   ],
+  // [
+  //   {
+  //     label: "Feedback",
+  //     icon: "i-lucide-message-circle",
+  //     to: "https://github.com/nuxt-ui-templates/dashboard",
+  //     target: "_blank",
+  //   },
+  //   {
+  //     label: "Help & Support",
+  //     icon: "i-lucide-info",
+  //     to: "https://github.com/nuxt/ui",
+  //     target: "_blank",
+  //   },
+  // ],
 ];
 </script>

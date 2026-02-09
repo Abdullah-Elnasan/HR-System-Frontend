@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { generateColumns } from "~/utils/generateColumns";
-import type { PayrollItem, PayrollItemForm } from "~/types/payrolls/payrollItem";
+import type {
+  PayrollItem,
+  PayrollItemForm,
+} from "~/types/payrolls/payrollItem";
 import { emptyPayrollItemForm } from "~/types/payrolls/payrollItem";
 import { isPayrollItemRow } from "~/composables/payrollItems/isPayrollItemRow";
 import { usePayrollItems } from "~/composables/payrollItems/usePayrollItems";
@@ -12,6 +15,9 @@ definePageMeta({
   title: "إدارة سجلات الرواتب",
   keepalive: false,
 });
+
+const route = useRoute();
+const payrollRunId = computed(() => route.params.id);
 
 /* ================== Composable ================== */
 const {
@@ -25,9 +31,8 @@ const {
   setPageSize,
   setSearch,
   deleteItem,
-  // createRecord,
   updateItem,
-} = usePayrollItems();
+} = usePayrollItems(payrollRunId.value);
 
 const open = ref(false);
 const titleDrower = ref("");
@@ -61,7 +66,7 @@ const enhancedItems = computed(() =>
     ...item,
     // payroll_run_name: item.payroll_run_name,
     employee_name: item.employee.full_name,
-  }))
+  })),
 );
 
 /* ================== Columns ================== */
@@ -91,8 +96,7 @@ const columns = computed(() =>
             "employee",
             "updated_at",
             "created_at",
-            "employee_id"
-
+            "employee_id",
           ],
           columns: {
             payroll_run_name: { filterable: true },
@@ -108,9 +112,9 @@ const columns = computed(() =>
             action: { hideable: false },
           },
         },
-        UButton
+        UButton,
       )
-    : []
+    : [],
 );
 
 /* ================== Effects ================== */
@@ -119,7 +123,7 @@ watch(
   (val) => {
     if (val.length) firstLoad.value = false;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 /* ================== Handlers ================== */
@@ -163,8 +167,8 @@ const formRef = ref<{ submit: () => void } | null>(null);
 
 const onSubmit = async (value: PayrollItemForm) => {
   try {
-    console.log('sadfas')
-    console.log(editingId.value)
+    console.log("sadfas");
+    console.log(editingId.value);
     if (editingId.value) {
       await updateItem(editingId.value, value);
     } else {
@@ -179,6 +183,8 @@ const onSubmit = async (value: PayrollItemForm) => {
 const onDeleteRecordHandler = async (id: number) => {
   await deleteItem(id);
 };
+
+const canEditRow = enhancedItems.value[0]?.status === 'pending';
 </script>
 
 <template>
@@ -192,7 +198,13 @@ const onDeleteRecordHandler = async (id: number) => {
 
   <AppTable
     v-else
-    :actions="{copy:false, view:false, delete:false, edit:{label:'منح أو خصم يدوي'}, displayMode:'inline'}"
+    :actions="{
+      copy: false,
+      view: false,
+      edit: canEditRow ? {
+        label: 'تعديل يدوي',
+      } : false  ,
+    }"
     :columns="columns"
     :data="enhancedItems"
     :total="safePagination.total"

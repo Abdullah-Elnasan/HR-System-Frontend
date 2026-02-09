@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { generateColumns } from "~/utils/generateColumns";
-import type { PayrollItem, PayrollItemForm } from "~/types/payrolls/payrollItem";
-import { emptyPayrollItemForm } from "~/types/payrolls/payrollItem";
-import { isPayrollItemRow } from "~/composables/payrollItems/isPayrollItemRow";
-import { usePayrollItems } from "~/composables/payrollItems/usePayrollItems";
+import type { PayrollSystem, PayrollSystemForm } from "~/types/PayrollSystem";
+import { emptyPayrollSystemForm } from "~/types/PayrollSystem";
+import { isPayrollSystemRow } from "~/composables/payrollSystem/isPayrollSystemRow";
+import { usePayrollSystems } from "~/composables/payrollSystem/usePayrollSystems";
 
 const UButton = resolveComponent("UButton");
 
 definePageMeta({
   layout: "dashboard",
-  title: "إدارة سجلات الرواتب",
+  title: "إدارة أنظمة الرواتب",
   keepalive: false,
 });
 
@@ -24,17 +24,17 @@ const {
   setPage,
   setPageSize,
   setSearch,
-  deleteItem,
-  // createRecord,
-  updateItem,
-} = usePayrollItems();
+  deletePayrollSystem,
+  createPayrollSystem,
+  updatePayrollSystem,
+} = usePayrollSystems();
 
 const open = ref(false);
 const titleDrower = ref("");
 
 /* ================== Computed ================== */
-const items = computed<PayrollItem[]>(() => data.value ?? []);
-console.log(items.value);
+const payrollSystems = computed<PayrollSystem[]>(() => data.value ?? []);
+
 const safePagination = computed(() => ({
   total: pagination.value?.total ?? 0,
   per_page: pagination.value?.per_page ?? pageSize.value,
@@ -56,55 +56,47 @@ const meta = {
 };
 
 /* ================== Enhanced Data ================== */
-const enhancedItems = computed(() =>
-  items.value.map((item) => ({
-    ...item,
-    // payroll_run_name: item.payroll_run_name,
-    employee_name: item.employee.full_name,
+const enhancedPayrollSystems = computed(() =>
+  payrollSystems.value.map((system) => ({
+    ...system,
+    salary_type_label: system.salary_type === "monthly" ? "شهري" : "بالساعة",
+    status_label: system.is_active ? "نشط" : "غير نشط",
+    deduct_label: system.deduct_missing_time ? "نعم" : "لا",
   }))
 );
 
 /* ================== Columns ================== */
 const columns = computed(() =>
-  enhancedItems.value.length
+  enhancedPayrollSystems.value.length
     ? generateColumns<any>(
-        enhancedItems.value,
+        enhancedPayrollSystems.value,
         {
           labels: {
-            payroll_run_name: "دورة الرواتب",
-            id: "ID",
-            employee_name: "الموظف",
-            period_start: "بداية الفترة",
-            period_end: "نهاية الفترة",
-            base_amount: "المبلغ الأساسي",
-            status: "حالة الاعتماد",
-            overtime_amount: "مبلغ العمل الإضافي",
+            name: "الاسم",
+            salary_type_label: "نوع الراتب",
+            monthly_salary: "الراتب الشهري",
+            hourly_rate: "الأجر بالساعة",
+            overtime_base_rate: "معامل الوقت الإضافي",
+            deduct_label: "خصم الوقت المفقود",
+            status_label: "الحالة",
             currency: "العملة",
-            manual_adjustment: "التعديل اليدوي",
-            adjustment_note: "ملاحظة التعديل",
-            total_amount: "المبلغ الإجمالي",
             action: "العمليات",
           },
           exclude: [
-            "payroll_run_id",
-            "payroll_run",
-            "employee",
-            "updated_at",
+            "salary_type",
+            "deduct_missing_time",
+            "is_active",
             "created_at",
-            "employee_id"
-
+            "updated_at",
           ],
           columns: {
-            payroll_run_name: { filterable: true },
-            employee_name: { filterable: true },
-            period_start: { type: "date" },
-            period_end: { type: "date" },
-            base_amount: { type: "number" },
-            overtime_amount: { type: "number" },
+            name: { filterable: true },
+            salary_type_label: { filterable: true },
+            monthly_salary: { type: "number" },
+            hourly_rate: { type: "number" },
+            overtime_base_rate: { type: "number" },
+            status_label: { filterable: true },
             currency: { filterable: true },
-            manual_adjustment: { type: "number" },
-            adjustment_note: { hidden: true },
-            total_amount: { type: "number" },
             action: { hideable: false },
           },
         },
@@ -115,7 +107,7 @@ const columns = computed(() =>
 
 /* ================== Effects ================== */
 watch(
-  items,
+  payrollSystems,
   (val) => {
     if (val.length) firstLoad.value = false;
   },
@@ -132,43 +124,39 @@ const onColumnFiltersChange = (val: any[]) => (columnFilters.value = val);
 /* ================== Form Management ================== */
 const editingId = ref<number | null>(null);
 const mode = computed(() => (editingId.value ? "edit" : "create"));
-const formModel = reactive<PayrollItemForm>(emptyPayrollItemForm());
+const formModel = reactive<PayrollSystemForm>(emptyPayrollSystemForm());
 
 const openDrower = (payload: { title: string; row?: unknown }) => {
   (document.activeElement as HTMLElement)?.blur();
   open.value = !open.value;
   titleDrower.value = payload.title;
 
-  if (payload.row && isPayrollItemRow(payload.row)) {
+  if (payload.row && isPayrollSystemRow(payload.row)) {
     editingId.value = payload.row.id;
     Object.assign(formModel, {
-      payroll_run_id: payload.row.payroll_run_id,
-      employee_id: payload.row.employee.id,
-      period_start: payload.row.period_start || null,
-      period_end: payload.row.period_end || null,
-      base_amount: payload.row.base_amount,
-      overtime_amount: payload.row.overtime_amount,
+      name: payload.row.name,
+      salary_type: payload.row.salary_type,
+      monthly_salary: payload.row.monthly_salary,
+      hourly_rate: payload.row.hourly_rate,
+      overtime_base_rate: payload.row.overtime_base_rate,
+      deduct_missing_time: payload.row.deduct_missing_time,
+      is_active: payload.row.is_active,
       currency: payload.row.currency,
-      manual_adjustment: payload.row.manual_adjustment,
-      adjustment_note: payload.row.adjustment_note || "",
-      total_amount: payload.row.total_amount,
     });
   } else {
     editingId.value = null;
-    Object.assign(formModel, emptyPayrollItemForm());
+    Object.assign(formModel, emptyPayrollSystemForm());
   }
 };
 
 const formRef = ref<{ submit: () => void } | null>(null);
 
-const onSubmit = async (value: PayrollItemForm) => {
+const onSubmit = async (value: PayrollSystemForm) => {
   try {
-    console.log('sadfas')
-    console.log(editingId.value)
     if (editingId.value) {
-      await updateItem(editingId.value, value);
+      await updatePayrollSystem(editingId.value, value);
     } else {
-      // await createRecord(value);
+      await createPayrollSystem(value);
     }
     open.value = false;
   } catch (error) {
@@ -176,8 +164,8 @@ const onSubmit = async (value: PayrollItemForm) => {
   }
 };
 
-const onDeleteRecordHandler = async (id: number) => {
-  await deleteItem(id);
+const onDeletePayrollSystemHandler = async (id: number) => {
+  await deletePayrollSystem(id);
 };
 </script>
 
@@ -192,9 +180,8 @@ const onDeleteRecordHandler = async (id: number) => {
 
   <AppTable
     v-else
-    :actions="{copy:false, view:false, delete:false, edit:{label:'منح أو خصم يدوي'}, displayMode:'inline'}"
     :columns="columns"
-    :data="enhancedItems"
+    :data="enhancedPayrollSystems"
     :total="safePagination.total"
     :page="page"
     :page-sizes="pageSizes"
@@ -204,15 +191,15 @@ const onDeleteRecordHandler = async (id: number) => {
     :sorting="sorting"
     :global-filter="search"
     :column-filters="columnFilters"
-    title-btn-create="إضافة سجل راتب"
-    title-btn-icon="lucide:receipt-text"
-    title-btn-edit="تعديل سجل راتب"
+    title-btn-create="إضافة نظام رواتب"
+    title-btn-icon="lucide:wallet"
+    title-btn-edit="تعديل نظام رواتب"
     @update:page="onPageChange"
     @update:page-size="onPageSizeChange"
     @update:sorting="onSortingChange"
     @update:global-filter="onSearchGlobal"
     @update:column-filters="onColumnFiltersChange"
-    @delete:row="onDeleteRecordHandler"
+    @delete:row="onDeletePayrollSystemHandler"
     @drower:open="openDrower"
     @update:data="openDrower"
   />
@@ -220,7 +207,7 @@ const onDeleteRecordHandler = async (id: number) => {
   <ClientOnly>
     <UDrawer
       v-model:open="open"
-      :description="`إدارة سجلات الرواتب`"
+      :description="`إدارة أنظمة الرواتب`"
       direction="left"
       :title="titleDrower"
       :ui="{
@@ -250,7 +237,7 @@ const onDeleteRecordHandler = async (id: number) => {
         </div>
 
         <ClientOnly>
-          <FormsPayrollItemsForm
+          <FormsPayrollSystemForm
             ref="formRef"
             v-model="formModel"
             :mode="mode"

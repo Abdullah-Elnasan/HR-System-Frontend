@@ -28,34 +28,27 @@ export const usePayrollItemsStore = defineStore("payrollItems", {
 
   actions: {
     /* ================== Fetch Items (Paginated) ================== */
-    async fetchItems(params?: Record<string, any>) {
-      this.loading = true;
-      this.error = null;
-      const toast = useToast();
+async fetchItems(params?: Record<string, any>) {
+  this.loading = true
+  this.error = null
+  const toast = useToast()
 
-      try {
-        const response = await fetchList<PaginatedResponse<PayrollItem>>({
-          endpoint: '/api/payroll-items/payroll-items',
-          page: params?.page ?? 1,
-          perPage: params?.per_page ?? 10,
-          search: params?.filter?.search,
-        });
+  try {
+    const response = await fetchList<PaginatedResponse<PayrollItem>>({
+      endpoint: params?.endpoint ?? '/api/payroll-items/payroll-items',
+      page: params?.page ?? 1,
+      perPage: params?.per_page ?? 10,
+      search: params?.filter?.search,
+    })
 
-        this.items = response.data;
-        this.pagination = response.pagination;
+    this.items = response.data
+    this.pagination = response.pagination
+    return response
+  } finally {
+    this.loading = false
+  }
+},
 
-        if ((response as any).messageAr) {
-          toast.add({ title: (response as any).messageAr, color: 'success' });
-        }
-
-        return response;
-      } catch (err: any) {
-        handleApiError(err, toast);
-        throw err;
-      } finally {
-        this.loading = false;
-      }
-    },
 
     /* ================== Fetch Single Record ================== */
     async fetchItemById(id: number | string) {

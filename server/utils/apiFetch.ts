@@ -154,9 +154,7 @@ export async function apiFetch<T>(
   const isFormData = options.body instanceof FormData
   let method = options.method ?? 'GET'
 
-  console.log(options.body);
 
-  // ⭐ الحل الأساسي لمشكلة Laravel
   if (isFormData && (method === 'PUT' || method === 'PATCH')) {
     options.body.append('_method', method)
     method = 'POST'
@@ -165,12 +163,15 @@ export async function apiFetch<T>(
 
 
   try {
+    console.log(config.public.apiToken);
+    console.log(config);
+    console.log('config.apiToken');
     const res = await $fetch<T>(url, {
       method,
       body: options.body,
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${config.apiToken}`,
+        Authorization: `Bearer ${config.public.apiToken}`,
         ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...options.headers,
       },

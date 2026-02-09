@@ -8,7 +8,7 @@ import { h, resolveComponent, computed, watch, ref } from "vue";
 import { useClipboard, refDebounced } from "@vueuse/core";
 import type { Column } from "@tanstack/vue-table";
 import type { ColumnDef } from "@tanstack/vue-table";
-import type { TableRow, DropdownMenuItem } from "@nuxt/ui";
+import type { TableColumn, TableRow, DropdownMenuItem } from "@nuxt/ui";
 import type { StatusConfig, TableActionsConfig } from "../types/table";
 import type { TableMeta } from "@tanstack/table-core";
 import type { Employee } from "~/types/employee";
@@ -47,11 +47,6 @@ const props = defineProps<{
   columnFilters?: any[];
   loading?: boolean;
   actions?: TableActionsConfig;
-
-  /** NEW: تحكم خارجي في إمكانية النقر على الصف */
-  rowClickable?: boolean;
-  /** NEW: دالة تُستدعى عند النقر على الصف */
-  onRowClick?: (row: T) => void;
 }>();
 
 /* =========================================================
@@ -68,9 +63,6 @@ const emit = defineEmits<{
   (e: "update:globalFilter", value: any): void;
   (e: "update:columnFilters", value: any): void;
   (e: "drower:open", payload: { title: string; row?: any }): void;
-
-  /** لو حبيت تسمع للحدث أيضاً في الـ Parent */
-  (e: "row:click", row: T): void;
 }>();
 
 /* =========================================================
@@ -136,14 +128,21 @@ watch(
   },
 );
 
+
+
 /* =========================================================
    Helpers
 ========================================================= */
-const toast = useToast();
-const { copy } = useClipboard();
-
 function statusCell(value: unknown) {
-  if (typeof value === "boolean") value = String(value);
+  // console.log(value);
+  // console.log(typeof value);
+
+  // ✅ نحول boolean إلى string
+  if (typeof value === "boolean") {
+    value = String(value);
+  }
+
+  // بعد التحويل نتأكد أنه string
   if (typeof value !== "string") return value;
 
   const cfg = props.statusMap?.[value];
@@ -152,162 +151,11 @@ function statusCell(value: unknown) {
   return h(UBadge, { color: cfg.color, variant: "soft" }, () => cfg.label);
 }
 
+
 function displayValue(value: unknown) {
   return value === null || value === undefined || value === 0 ? "-" : value;
 }
 
-/**
- * Get count of enabled actions
- */
-function getEnabledActionsCount(): number {
-  let count = 0;
-  if (props.actions?.copy !== false) count++;
-  if (props.actions?.view !== false) count++;
-  if (props.actions?.edit !== false) count++;
-  if (props.actions?.delete !== false) count++;
-  return count;
-}
-
-/**
- * Determine how to display actions based on displayMode prop
- */
-const shouldShowInline = computed(() => {
-  const mode = props.actions?.displayMode ?? "auto";
-  const count = getEnabledActionsCount();
-
-  if (mode === "inline") return true;
-  if (mode === "dropdown") return false;
-  if (mode === "auto") return count === 1;
-
-  return false;
-});
-
-/**
- * Get all enabled actions as an array (for inline display)
- */
-function getInlineActions(row: T): DropdownMenuItem[] {
-  const actions: DropdownMenuItem[] = [];
-
-  const copyConfig = props.actions?.copy;
-  if (copyConfig !== false) {
-    const copyItem = typeof copyConfig === "object" ? copyConfig : {};
-    actions.push({
-      label: copyItem.label ?? "Copy ID",
-      icon: copyItem.icon ?? "i-lucide-copy",
-      onSelect: () => {
-        copy(String(row.id));
-        toast.add({
-          title: "ID copied to clipboard!",
-          color: "success",
-          icon: "i-lucide-circle-check",
-        });
-      },
-    });
-  }
-
-  const viewConfig = props.actions?.view;
-  if (viewConfig !== false) {
-    const viewItem = typeof viewConfig === "object" ? viewConfig : {};
-    actions.push({
-      label: viewItem.label ?? "View",
-      icon: viewItem.icon ?? "i-lucide-eye",
-      onSelect: () => emit("view:row", row.id),
-    });
-  }
-
-  const editConfig = props.actions?.edit;
-  if (editConfig !== false) {
-    const editItem = typeof editConfig === "object" ? editConfig : {};
-    actions.push({
-      label: editItem.label ?? "Edit",
-      icon: editItem.icon ?? "i-lucide-edit",
-      onSelect: () =>
-        emit("update:data", {
-          title: props.titleBtnEdit,
-          row,
-        }),
-    });
-  }
-
-  const deleteConfig = props.actions?.delete;
-  if (deleteConfig !== false) {
-    const deleteItem = typeof deleteConfig === "object" ? deleteConfig : {};
-    actions.push({
-      label: deleteItem.label ?? "Delete",
-      icon: deleteItem.icon ?? "i-lucide-trash",
-      color: "error",
-      onSelect: () => emit("delete:row", row.id),
-    });
-  }
-
-  return actions;
-}
-
-function getDropdownActions(row: T): DropdownMenuItem[][] {
-  const items: DropdownMenuItem[][] = [];
-
-  const copyConfig = props.actions?.copy;
-  if (copyConfig !== false) {
-    const copyItem = typeof copyConfig === "object" ? copyConfig : {};
-    items.push([
-      {
-        label: copyItem.label ?? "Copy ID",
-        icon: copyItem.icon ?? "i-lucide-copy",
-        onSelect: () => {
-          copy(String(row.id));
-          toast.add({
-            title: "ID copied to clipboard!",
-            color: "success",
-            icon: "i-lucide-circle-check",
-          });
-        },
-      },
-    ]);
-  }
-
-  const main: DropdownMenuItem[] = [];
-
-  const viewConfig = props.actions?.view;
-  if (viewConfig !== false) {
-    const viewItem = typeof viewConfig === "object" ? viewConfig : {};
-    main.push({
-      label: viewItem.label ?? "View",
-      icon: viewItem.icon ?? "i-lucide-eye",
-      onSelect: () => emit("view:row", row.id),
-    });
-  }
-
-  const editConfig = props.actions?.edit;
-  if (editConfig !== false) {
-    const editItem = typeof editConfig === "object" ? editConfig : {};
-    main.push({
-      label: editItem.label ?? "Edit",
-      icon: editItem.icon ?? "i-lucide-edit",
-      onSelect: () =>
-        emit("update:data", {
-          title: props.titleBtnEdit,
-          row,
-        }),
-    });
-  }
-
-  const deleteConfig = props.actions?.delete;
-  if (deleteConfig !== false) {
-    const deleteItem = typeof deleteConfig === "object" ? deleteConfig : {};
-    main.push({
-      label: deleteItem.label ?? "Delete",
-      icon: deleteItem.icon ?? "i-lucide-trash",
-      color: "error",
-      onSelect: () => emit("delete:row", row.id),
-    });
-  }
-
-  if (main.length) {
-    items.push(main);
-  }
-
-  return items;
-}
 
 function getHeader(column: Column<T>, label: string) {
   const isSorted = column.getIsSorted();
@@ -355,16 +203,6 @@ function resolveObjectValue(value: unknown, key?: string) {
   return (value as any)[key] ?? "";
 }
 
-/** Helper للنقر على الصف */
-function handleRowClick(row: T) {
-  if (!props.rowClickable) return;
-  // استدعِ دالة خارجية إن وُجدت
-  if (props.onRowClick) props.onRowClick(row);
-  // وأيضاً أرسل حدث داخلي لو أحببت استخدامه
-  emit("row:click", row);
-}
-
-/* Hover Popover state (كما هو) */
 const anchor = ref({ x: 0, y: 0 });
 
 const reference = computed(() => ({
@@ -380,6 +218,14 @@ const reference = computed(() => ({
     }) as DOMRect,
 }));
 
+// const actionsConfig = computed<TableActionsConfig>(() => ({
+//   copy: props.actions?.copy ?? true,
+//   view: props.actions?.view ?? true,
+//   edit: props.actions?.edit ?? true,
+//   delete: props.actions?.delete ?? true,
+// }));
+
+
 const selectedRow = ref<TableRow<Employee> | null>(null);
 const open = ref(false);
 const openDebounced = refDebounced(open, 50);
@@ -388,6 +234,79 @@ function onHover(_e: Event, row: TableRow<Employee> | null) {
   selectedRow.value = row;
   open.value = !!row;
 }
+
+const toast = useToast();
+const { copy } = useClipboard();
+
+function getDropdownActions(row: T): DropdownMenuItem[][] {
+  const items: DropdownMenuItem[][] = [];
+
+  /* ===== Copy ID ===== */
+  const copyConfig = props.actions?.copy;
+  if (copyConfig !== false) {
+    const copyItem = typeof copyConfig === 'object' ? copyConfig : {};
+    items.push([
+      {
+        label: copyItem.label ?? "Copy ID",
+        icon: copyItem.icon ?? "i-lucide-copy",
+        onSelect: () => {
+          copy(String(row.id));
+          toast.add({
+            title: "ID copied to clipboard!",
+            color: "success",
+            icon: "i-lucide-circle-check",
+          });
+        },
+      },
+    ]);
+  }
+
+  /* ===== Main Actions ===== */
+  const main: DropdownMenuItem[] = [];
+
+  const viewConfig = props.actions?.view;
+  if (viewConfig !== false) {
+    const viewItem = typeof viewConfig === 'object' ? viewConfig : {};
+    main.push({
+      label: viewItem.label ?? "View",
+      icon: viewItem.icon ?? "i-lucide-eye",
+      onSelect: () => emit("view:row", row.id),
+    });
+  }
+
+  const editConfig = props.actions?.edit;
+  if (editConfig !== false) {
+    const editItem = typeof editConfig === 'object' ? editConfig : {};
+    main.push({
+      label: editItem.label ?? "Edit",
+      icon: editItem.icon ?? "i-lucide-edit",
+      onSelect: () =>
+        emit("update:data", {
+          title: props.titleBtnEdit,
+          row,
+        }),
+    });
+  }
+
+  const deleteConfig = props.actions?.delete;
+  if (deleteConfig !== false) {
+    const deleteItem = typeof deleteConfig === 'object' ? deleteConfig : {};
+    main.push({
+      label: deleteItem.label ?? "Delete",
+      icon: deleteItem.icon ?? "i-lucide-trash",
+      color: "error",
+      onSelect: () => emit("delete:row", row.id),
+    });
+  }
+
+  if (main.length) {
+    items.push(main);
+  }
+
+  return items;
+}
+
+
 </script>
 
 <template>
@@ -505,8 +424,6 @@ function onHover(_e: Event, row: TableRow<Employee> | null) {
             <div
               class="flex items-center gap-1"
               v-else-if="col.id === 'full_name'"
-              :class="props.rowClickable ? 'cursor-pointer' : ''"
-              @click="props.rowClickable && handleRowClick(row.original)"
             >
               <UAvatar
                 :src="row.original.image || undefined"
@@ -539,8 +456,6 @@ function onHover(_e: Event, row: TableRow<Employee> | null) {
             <div
               class="flex items-center gap-1"
               v-else-if="col.id === 'location_ar'"
-              :class="props.rowClickable ? 'cursor-pointer' : ''"
-              @click="props.rowClickable && handleRowClick(row.original)"
             >
               <UIcon
                 name="material-symbols:location-on-outline-rounded"
@@ -549,56 +464,26 @@ function onHover(_e: Event, row: TableRow<Employee> | null) {
               {{ row.original.location_ar }}
             </div>
 
-            <template v-else-if="col.id === 'action'">
-              <!-- Inline Mode: عرض الأزرار بجانب بعض -->
-              <div v-if="shouldShowInline" class="flex items-center gap-1">
-                <UButton
-                  v-for="(action, idx) in getInlineActions(row.original)"
-                  :key="idx"
-                  :label="action.label"
-                  :icon="action.icon"
-                  :color="(action.color as any) || 'neutral'"
-                  variant="ghost"
-                  size="sm"
-                  @click="action.onSelect"
-                />
-              </div>
-
-              <!-- Dropdown Mode: القائمة المنسدلة -->
-              <UDropdownMenu
-                v-else
-                :items="getDropdownActions(row.original)"
-                :content="{ align: 'center', side: 'left', sideOffset: 0 }"
-                :ui="{ content: 'w-24' }"
-              >
-                <UButton
-                  icon="i-lucide-ellipsis-vertical"
-                  color="neutral"
-                  variant="ghost"
-                  aria-label="Actions"
-                />
-              </UDropdownMenu>
-            </template>
-
-            <span
-              v-else-if="col.meta?.type === 'object'"
-              :class="props.rowClickable ? 'cursor-pointer' : ''"
-              @click="props.rowClickable && handleRowClick(row.original)"
+            <UDropdownMenu
+              v-else-if="col.id === 'action'"
+              :items="getDropdownActions(row.original)"
+              :content="{ align: 'center', side: 'left', sideOffset: 0 }"
+              :ui="{ content: 'w-24' }"
             >
+              <UButton
+                icon="i-lucide-ellipsis-vertical"
+                color="neutral"
+                variant="ghost"
+                aria-label="Actions"
+              />
+            </UDropdownMenu>
+
+            <span v-else-if="col.meta?.type === 'object'">
               {{ resolveObjectValue(getValue(), col.meta?.valueKey) }}
             </span>
 
-            <slot
-              v-else
-              :name="`${col.id}-cell`"
-              :getValue="getValue"
-            >
-              <div
-                :class="props.rowClickable ? 'cursor-pointer' : ''"
-                @click="props.rowClickable && handleRowClick(row.original)"
-              >
-                {{ displayValue(getValue()) }}
-              </div>
+            <slot v-else :name="`${col.id}-cell`" :getValue="getValue">
+              {{ displayValue(getValue()) }}
             </slot>
           </template>
         </UTable>

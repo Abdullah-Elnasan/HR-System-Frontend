@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { generateColumns } from "~/utils/generateColumns";
-import type { PayrollItem, PayrollItemForm } from "~/types/payrolls/payrollItem";
-import { emptyPayrollItemForm } from "~/types/payrolls/payrollItem";
-import { isPayrollItemRow } from "~/composables/payrollItems/isPayrollItemRow";
-import { usePayrollItems } from "~/composables/payrollItems/usePayrollItems";
+import type { WorkScheduleAssignment, WorkScheduleAssignmentForm } from "~/types/workScheduleAssignments";
+import { emptyWorkScheduleAssignmentForm } from "~/types/workScheduleAssignments";
+import { isWorkScheduleAssignmentRow } from "~/composables/workScheduleAssignment/isWorkScheduleAssignmentRow";
+import { useWorkScheduleAssignments } from "~/composables/workScheduleAssignment/useWorkScheduleAssignments";
 
 const UButton = resolveComponent("UButton");
 
 definePageMeta({
   layout: "dashboard",
-  title: "إدارة سجلات الرواتب",
+  title: "إدارة إسناد أنظمة الدوام",
   keepalive: false,
 });
 
@@ -24,17 +24,17 @@ const {
   setPage,
   setPageSize,
   setSearch,
-  deleteItem,
-  // createRecord,
-  updateItem,
-} = usePayrollItems();
+  deleteAssignment,
+  createAssignment,
+  updateAssignment,
+} = useWorkScheduleAssignments();
 
 const open = ref(false);
 const titleDrower = ref("");
 
 /* ================== Computed ================== */
-const items = computed<PayrollItem[]>(() => data.value ?? []);
-console.log(items.value);
+const assignments = computed<WorkScheduleAssignment[]>(() => data.value ?? []);
+
 const safePagination = computed(() => ({
   total: pagination.value?.total ?? 0,
   per_page: pagination.value?.per_page ?? pageSize.value,
@@ -55,56 +55,58 @@ const meta = {
   },
 };
 
-/* ================== Enhanced Data ================== */
-const enhancedItems = computed(() =>
-  items.value.map((item) => ({
-    ...item,
-    // payroll_run_name: item.payroll_run_name,
-    employee_name: item.employee.full_name,
+/* ================== Computed Status ================== */
+const getAssignmentStatus = (assignment: WorkScheduleAssignment) => {
+  if (!assignment.ends_at) return "نشط";
+  const endDate = new Date(assignment.ends_at);
+  const now = new Date();
+  return endDate > now ? "نشط" : "منتهي";
+};
+
+
+
+/* ================== Enhanced Data with Status ================== */
+const enhancedAssignments = computed(() =>
+  assignments.value.map(assignment => ({
+    ...assignment,
+
+    assignable_type: assignment.assignable.type === "Employee"
+      ? "موظف"
+      : assignment.assignable.type === "Branch"
+      ? "فرع"
+      : "قسم",
+    assignable_name: assignment.assignable.name,
+    work_schedule_name: assignment.work_schedule.name,
+    status: getAssignmentStatus(assignment),
   }))
 );
 
 /* ================== Columns ================== */
 const columns = computed(() =>
-  enhancedItems.value.length
+  enhancedAssignments.value.length
     ? generateColumns<any>(
-        enhancedItems.value,
+        enhancedAssignments.value,
         {
           labels: {
-            payroll_run_name: "دورة الرواتب",
-            id: "ID",
-            employee_name: "الموظف",
-            period_start: "بداية الفترة",
-            period_end: "نهاية الفترة",
-            base_amount: "المبلغ الأساسي",
-            status: "حالة الاعتماد",
-            overtime_amount: "مبلغ العمل الإضافي",
-            currency: "العملة",
-            manual_adjustment: "التعديل اليدوي",
-            adjustment_note: "ملاحظة التعديل",
-            total_amount: "المبلغ الإجمالي",
+            assignable_type: "نوع الإسناد",
+            assignable_name: "الاسم",
+            work_schedule_name: "نظام الدوام",
+            starts_at: "تاريخ البداية",
+            ends_at: "تاريخ النهاية",
+            status: "الحالة",
             action: "العمليات",
           },
           exclude: [
-            "payroll_run_id",
-            "payroll_run",
-            "employee",
-            "updated_at",
-            "created_at",
-            "employee_id"
-
+            "work_schedule",
+            "assignable",
           ],
           columns: {
-            payroll_run_name: { filterable: true },
-            employee_name: { filterable: true },
-            period_start: { type: "date" },
-            period_end: { type: "date" },
-            base_amount: { type: "number" },
-            overtime_amount: { type: "number" },
-            currency: { filterable: true },
-            manual_adjustment: { type: "number" },
-            adjustment_note: { hidden: true },
-            total_amount: { type: "number" },
+            assignable_type: { filterable: true },
+            assignable_name: { filterable: true },
+            work_schedule_name: { filterable: true },
+            starts_at: { type: "date", hidden:true },
+            ends_at: { type: "date", hidden:true },
+            status: { filterable: true },
             action: { hideable: false },
           },
         },
@@ -115,8 +117,9 @@ const columns = computed(() =>
 
 /* ================== Effects ================== */
 watch(
-  items,
+  assignments,
   (val) => {
+  console.log(assignments)
     if (val.length) firstLoad.value = false;
   },
   { immediate: true }
@@ -132,52 +135,53 @@ const onColumnFiltersChange = (val: any[]) => (columnFilters.value = val);
 /* ================== Form Management ================== */
 const editingId = ref<number | null>(null);
 const mode = computed(() => (editingId.value ? "edit" : "create"));
-const formModel = reactive<PayrollItemForm>(emptyPayrollItemForm());
+const formModel = reactive<WorkScheduleAssignmentForm>(emptyWorkScheduleAssignmentForm());
 
 const openDrower = (payload: { title: string; row?: unknown }) => {
   (document.activeElement as HTMLElement)?.blur();
   open.value = !open.value;
   titleDrower.value = payload.title;
 
-  if (payload.row && isPayrollItemRow(payload.row)) {
+  if (payload.row && isWorkScheduleAssignmentRow(payload.row)) {
     editingId.value = payload.row.id;
     Object.assign(formModel, {
-      payroll_run_id: payload.row.payroll_run_id,
-      employee_id: payload.row.employee.id,
-      period_start: payload.row.period_start || null,
-      period_end: payload.row.period_end || null,
-      base_amount: payload.row.base_amount,
-      overtime_amount: payload.row.overtime_amount,
-      currency: payload.row.currency,
-      manual_adjustment: payload.row.manual_adjustment,
-      adjustment_note: payload.row.adjustment_note || "",
-      total_amount: payload.row.total_amount,
+      assignable_type: payload.row.assignable.type,
+      assignable_id: payload.row.assignable.id,
+      work_schedule_id: payload.row.work_schedule.id,
+      starts_at: payload.row.starts_at || null,
+      ends_at: payload.row.ends_at || null,
     });
   } else {
     editingId.value = null;
-    Object.assign(formModel, emptyPayrollItemForm());
+    Object.assign(formModel, emptyWorkScheduleAssignmentForm());
   }
 };
 
 const formRef = ref<{ submit: () => void } | null>(null);
 
-const onSubmit = async (value: PayrollItemForm) => {
+const onSubmit = async (value: WorkScheduleAssignmentForm) => {
   try {
-    console.log('sadfas')
-    console.log(editingId.value)
+    const payload: Partial<WorkScheduleAssignmentForm> = { ...value };
+
+    // 🔒 عند التعديل: لا نرسل جهة الإسناد
     if (editingId.value) {
-      await updateItem(editingId.value, value);
+      delete payload.assignable_type;
+      delete payload.assignable_id;
+
+      await updateAssignment(editingId.value, payload);
     } else {
-      // await createRecord(value);
+      await createAssignment(payload);
     }
+
     open.value = false;
   } catch (error) {
     console.error("Submit error:", error);
   }
 };
 
-const onDeleteRecordHandler = async (id: number) => {
-  await deleteItem(id);
+
+const onDeleteAssignmentHandler = async (id: number) => {
+  await deleteAssignment(id);
 };
 </script>
 
@@ -192,9 +196,9 @@ const onDeleteRecordHandler = async (id: number) => {
 
   <AppTable
     v-else
-    :actions="{copy:false, view:false, delete:false, edit:{label:'منح أو خصم يدوي'}, displayMode:'inline'}"
     :columns="columns"
-    :data="enhancedItems"
+    :data="enhancedAssignments"
+    :btn-create="true"
     :total="safePagination.total"
     :page="page"
     :page-sizes="pageSizes"
@@ -204,15 +208,15 @@ const onDeleteRecordHandler = async (id: number) => {
     :sorting="sorting"
     :global-filter="search"
     :column-filters="columnFilters"
-    title-btn-create="إضافة سجل راتب"
-    title-btn-icon="lucide:receipt-text"
-    title-btn-edit="تعديل سجل راتب"
+    title-btn-create="إضافة إسناد"
+    title-btn-icon="material-symbols:assignment-add-outline-rounded"
+    title-btn-edit="تعديل إسناد"
     @update:page="onPageChange"
     @update:page-size="onPageSizeChange"
     @update:sorting="onSortingChange"
     @update:global-filter="onSearchGlobal"
     @update:column-filters="onColumnFiltersChange"
-    @delete:row="onDeleteRecordHandler"
+    @delete:row="onDeleteAssignmentHandler"
     @drower:open="openDrower"
     @update:data="openDrower"
   />
@@ -220,7 +224,7 @@ const onDeleteRecordHandler = async (id: number) => {
   <ClientOnly>
     <UDrawer
       v-model:open="open"
-      :description="`إدارة سجلات الرواتب`"
+      :description="`إدارة إسناد أنظمة الدوام`"
       direction="left"
       :title="titleDrower"
       :ui="{
@@ -250,12 +254,13 @@ const onDeleteRecordHandler = async (id: number) => {
         </div>
 
         <ClientOnly>
-          <FormsPayrollItemsForm
+          <FormsWorkScheduleAssignmentFrom
             ref="formRef"
             v-model="formModel"
             :mode="mode"
             @submit="onSubmit"
             class="min-w-150 items-start"
+            :columns="1"
           />
         </ClientOnly>
       </template>

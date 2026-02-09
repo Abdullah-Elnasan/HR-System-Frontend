@@ -18,11 +18,21 @@ export type PaginatedResponse<T> = {
 };
 
 
-export type TableActionsConfig = {
-  copy?: boolean;
-  view?: boolean;
-  edit?: boolean;
-  delete?: boolean;
+export type TableActionItem = {
+  enabled?: boolean;
+  label?: string;
+  icon?: string;
 };
+
+export type TableActionsDisplayMode = 'auto' | 'dropdown' | 'inline';
+
+export type TableActionsConfig = {
+  copy?: boolean | TableActionItem;
+  view?: boolean | TableActionItem;
+  edit?: boolean | TableActionItem;
+  delete?: boolean | TableActionItem;
+  displayMode?: TableActionsDisplayMode; // ← جديد
+};
+
 
 

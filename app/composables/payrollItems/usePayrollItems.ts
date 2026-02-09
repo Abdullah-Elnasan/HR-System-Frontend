@@ -1,11 +1,16 @@
 // ~/composables/payroll-Items/usePayrollRecords.ts
-import { usePayrollItemsStore } from '~/stores/PayrollItems/PayrollItems'
+import { usePayrollItemsStore } from '~/stores/payrollItems/payrollItems'
 import type { PayrollItemForm } from '~/types/payrolls/payrollItem'
 import { usePaginatedList } from '~/composables/usePaginatedList'
 
-export function usePayrollItems() {
+export function usePayrollItems(payrollRunId?: string | string[] | undefined){
   const store = usePayrollItemsStore()
   const toast = useToast()
+
+    const endpoint = payrollRunId
+    ? `/api/payroll-runs/${payrollRunId}`
+    : '/api/payroll-items/payroll-items'
+
 
   /* ================== Paginated List ================== */
   const list = usePaginatedList({
@@ -19,7 +24,10 @@ export function usePayrollItems() {
   /* ================== Fetch ================== */
   async function fetchItems(params?: Record<string, any>) {
     try {
-      await store.fetchItems(params)
+      await store.fetchItems({
+        ...params,
+        endpoint, // 👈 نمرره فقط
+      })
     } catch (error: any) {
       toast.add({
         title: 'خطأ',
