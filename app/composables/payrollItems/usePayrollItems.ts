@@ -7,15 +7,16 @@ export function usePayrollItems(payrollRunId?: string | string[] | undefined){
   const store = usePayrollItemsStore()
   const toast = useToast()
 
-    const endpoint = payrollRunId
-    ? `/api/payroll-runs/${payrollRunId}`
-    : '/api/payroll-items/payroll-items'
+  const endpoint = payrollRunId
+  ? `/api/payroll-runs/${payrollRunId}`
+  : '/api/payroll-items/payroll-items'
 
+  console.log(endpoint);
 
   /* ================== Paginated List ================== */
   const list = usePaginatedList({
     key: 'payroll-items',
-    endpoint: '/api/payroll-items/payroll-items',
+    endpoint: endpoint,
     store: {
       setData: store.setItems,
     },

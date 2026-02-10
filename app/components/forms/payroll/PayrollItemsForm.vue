@@ -2,6 +2,7 @@
 import type { PayrollItemForm } from "~/types/payrolls/payrollItem";
 import type { Field } from "~/components/generic-form.vue";
 import { useFormModel } from "~/composables/useFormModel";
+import { payrollItemSchema } from "~/schemas/payroll-item.schema";
 
 /* ================== Props / Emits ================== */
 const props = defineProps<{
@@ -55,6 +56,7 @@ defineExpose({
     <GenericForm
       ref="formRef"
       v-model="model"
+      :schema="payrollItemSchema"
       :fields="fields"
       :loading="loading"
       :columns="props.columns ?? 2"

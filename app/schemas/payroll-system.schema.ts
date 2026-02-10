@@ -1,11 +1,7 @@
 // schemas/payroll-system.schema.ts
 import { z } from 'zod'
-import type { SalaryType, Currency } from '~/types/PayrollSystem'
 
-/**
- * PayrollSystem form validation schema
- * متوافق مع Laravel FormRequest
- */
+
 export const payrollSystemSchema = z.object({
   name: z
     .string()
@@ -20,11 +16,11 @@ export const payrollSystemSchema = z.object({
 
   monthly_salary: z
     .number()
-    .nullable(),
+    .nullable().or(z.literal('')),
 
   hourly_rate: z
     .number()
-    .nullable(),
+    .nullable().or(z.literal('')),
 
   overtime_base_rate: z
     .number()

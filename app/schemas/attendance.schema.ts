@@ -1,18 +1,23 @@
-// schemas/attendance.schema.ts
 import { z } from 'zod'
 
-/**
- * Attendance form validation schema
- * متوافق مع Laravel FormRequest
- */
 export const attendanceSchema = z.object({
   employee_id: z
-    .number()
-    .nullable(),
+    .preprocess(
+      (val) => {
+        const n = Number(val);
+        return isNaN(n) ? undefined : n;
+      },
+      z.number().int().nullable()
+    ),
 
   device_id: z
-    .number()
-    .nullable(),
+    .preprocess(
+      (val) => {
+        const n = Number(val);
+        return isNaN(n) ? undefined : n;
+      },
+      z.number().int().nullable()
+    ),
 
   date: z
     .string()
@@ -33,36 +38,68 @@ export const attendanceSchema = z.object({
     .or(z.literal('')),
 
   work_minutes: z
-    .number()
-    .nullable(),
+    .preprocess(
+      (val) => {
+        const n = Number(val);
+        return isNaN(n) ? undefined : n;
+      },
+      z.number().nullable()
+    ),
 
   required_minutes: z
-    .number()
-    .nullable(),
+    .preprocess(
+      (val) => {
+        const n = Number(val);
+        return isNaN(n) ? undefined : n;
+      },
+      z.number().nullable()
+    ),
 
   overtime_minutes: z
-    .number()
-    .nullable(),
+    .preprocess(
+      (val) => {
+        const n = Number(val);
+        return isNaN(n) ? undefined : n;
+      },
+      z.number().nullable()
+    ),
 
   undertime_minutes: z
-    .number()
-    .nullable(),
+    .preprocess(
+      (val) => {
+        const n = Number(val);
+        return isNaN(n) ? undefined : n;
+      },
+      z.number().nullable()
+    ),
 
   late_minutes: z
-    .number()
-    .nullable(),
+    .preprocess(
+      (val) => {
+        const n = Number(val);
+        return isNaN(n) ? undefined : n;
+      },
+      z.number().nullable()
+    ),
 
   early_leave_minutes: z
-    .number()
-    .nullable(),
+    .preprocess(
+      (val) => {
+        const n = Number(val);
+        return isNaN(n) ? undefined : n;
+      },
+      z.number().nullable()
+    ),
 
   is_late: z
     .boolean()
-    .nullable(),
+    .nullable()
+    .or(z.literal('')),
 
   is_early_leave: z
     .boolean()
-    .nullable(),
+    .nullable()
+    .or(z.literal('')),
 
   attendance_status: z
     .string()

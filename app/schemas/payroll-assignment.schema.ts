@@ -1,10 +1,6 @@
 // schemas/payroll-assignment.schema.ts
 import { z } from 'zod'
 
-/**
- * PayrollAssignment form validation schema
- * متوافق مع Laravel FormRequest
- */
 export const payrollAssignmentSchema = z.object({
   assignable_type: z
     .string()
@@ -13,11 +9,11 @@ export const payrollAssignmentSchema = z.object({
 
   assignable_id: z
     .number()
-    .nullable(),
+    .nullable().or(z.literal('')),
 
   payroll_system_id: z
     .number()
-    .nullable(),
+    .nullable().or(z.literal('')),
 
   effective_from: z
     .string()

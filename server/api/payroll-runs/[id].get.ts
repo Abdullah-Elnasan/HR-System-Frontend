@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  console.log(`/payroll-runs/${id}/entries`)
   return proxyFetch(event, `/payroll-runs/${id}/entries`)
 })
 

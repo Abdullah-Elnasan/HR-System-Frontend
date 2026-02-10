@@ -80,12 +80,12 @@ const tableRef = useTemplateRef("table");
 
 const columnVisibility = ref<Record<string, boolean>>(
   props.initialVisibility ??
-    Object.fromEntries(
-      props.columns.map((c: ColumnDef<any>) => [
-        c.id!,
-        !(c.meta as any)?.hiddenByDefault,
-      ]),
-    ),
+  Object.fromEntries(
+    props.columns.map((c: ColumnDef<any>) => [
+      c.id!,
+      !(c.meta as any)?.hiddenByDefault,
+    ]),
+  ),
 );
 
 const columnPinning = ref({
@@ -392,142 +392,88 @@ function onHover(_e: Event, row: TableRow<Employee> | null) {
 
 <template>
   <div class="flex flex-col w-full">
+
+
     <!-- Toolbar -->
     <div class="flex gap-2 px-4 pb-3 justify-between border-default">
       <!-- Page Size -->
       <div class="flex gap-2">
-        <USelect
-          :model-value="pageSize"
-          :items="pageSizes ?? [10, 20, 50]"
-          class="w-24"
-          @update:model-value="emit('update:pageSize', $event)"
-        />
+
+        <USelect :model-value="pageSize" :items="pageSizes ?? [10, 20, 50]" class="w-16"
+          @update:model-value="emit('update:pageSize', $event)" />
 
         <!-- Columns Visibility -->
-        <UDropdownMenu
-          :items="
-            tableRef?.tableApi
-              ?.getAllColumns()
-              .filter((c: Column<T>) => c.getCanHide())
-              .map((c: Column<T>) => ({
-                type: 'checkbox',
-                label: c.columnDef.meta?.label ?? String(c.id),
-                checked: c.getIsVisible(),
-                onUpdateChecked: (v: boolean) =>
-                  tableRef?.tableApi?.getColumn(c.id)?.toggleVisibility(v),
-              }))
-          "
-        >
+        <UDropdownMenu :items="tableRef?.tableApi
+            ?.getAllColumns()
+            .filter((c: Column<T>) => c.getCanHide())
+            .map((c: Column<T>) => ({
+              type: 'checkbox',
+              label: c.columnDef.meta?.label ?? String(c.id),
+              checked: c.getIsVisible(),
+              onUpdateChecked: (v: boolean) =>
+                tableRef?.tableApi?.getColumn(c.id)?.toggleVisibility(v),
+            }))
+          ">
           <UButton label="الأعمدة" variant="outline" color="neutral" />
         </UDropdownMenu>
 
         <!-- Column Filter -->
-        <UInput
-          v-if="searchColumn"
-          placeholder="Search..."
-          @update:model-value="
-            emit('filter', { column: searchColumn, value: $event })
-          "
-        />
+        <UInput v-if="searchColumn" placeholder="Search..." @update:model-value="
+          emit('filter', { column: searchColumn, value: $event })
+          " />
 
         <!-- Global Filter -->
-        <UInput
-          v-model="globalFilter"
-          placeholder="البحث بالاسم أو ال id ..."
-          @update:model-value="emit('update:globalFilter', $event)"
-        />
+        <UInput v-model="globalFilter" placeholder="البحث بالاسم أو ال id ..."
+          @update:model-value="emit('update:globalFilter', $event)" />
+        <slot name="toolbar-prepend"></slot>
       </div>
 
-      <div>
-        <template v-if="linkPageAdd">
-          <NuxtLink :to="linkPageAdd">
-            <UButton
-              v-if="btnCreate"
-              :label="titleBtnCreate"
-              variant="outline"
-              color="neutral"
-              :icon="titleBtnIcon"
-            />
-          </NuxtLink>
-        </template>
-        <template v-else>
-          <UButton
-            v-if="btnCreate"
-            :label="titleBtnCreate"
-            variant="outline"
-            color="neutral"
-            :icon="titleBtnIcon"
-            @click="emit('drower:open', { title: titleBtnCreate })"
-          />
-        </template>
-      </div>
+    </div>
+    <div class="flex gap-2 px-4 pb-3 justify-end w-full">
+      <template v-if="linkPageAdd">
+        <NuxtLink :to="linkPageAdd">
+          <UButton v-if="btnCreate" :label="titleBtnCreate" variant="outline" color="neutral" :icon="titleBtnIcon" />
+        </NuxtLink>
+      </template>
+      <template v-else>
+        <UButton v-if="btnCreate" :label="titleBtnCreate" variant="outline" color="neutral" :icon="titleBtnIcon"
+          @click="emit('drower:open', { title: titleBtnCreate })" />
+      </template>
     </div>
 
     <ClientOnly>
       <div class="flex w-full flex-1 gap-1">
-        <UTable
-          ref="table"
-          class="flex-1 max-h-135"
-          sticky
-          :loading="props.loading"
-          loading-color="primary"
-          loading-animation="carousel"
-          :ui="{ thead: 'head-table', tr: 'hover-Poper' }"
-          :columns="columns"
-          :data="data"
-          :meta="meta"
-          v-model:column-visibility="columnVisibility"
-          v-model:column-pinning="columnPinning"
-          v-model:sorting="sorting"
-          v-model:column-filters="columnFilters"
-          @sort="emit('update:sorting', $event)"
+        <UTable ref="table" class="flex-1 max-h-135" sticky :loading="props.loading" loading-color="primary"
+          loading-animation="carousel" :ui="{ thead: 'head-table', tr: 'hover-Poper' }" :columns="columns" :data="data"
+          :meta="meta" v-model:column-visibility="columnVisibility" v-model:column-pinning="columnPinning"
+          v-model:sorting="sorting" v-model:column-filters="columnFilters" @sort="emit('update:sorting', $event)"
           @update:global-filter="emit('update:globalFilter', $event)"
-          @update:column-filters="emit('update:columnFilters', $event)"
-          @pointermove="
+          @update:column-filters="emit('update:columnFilters', $event)" @pointermove="
             (ev: PointerEvent) => {
               anchor.x = ev.clientX;
               anchor.y = ev.clientY;
             }
-          "
-          @hover="onHover"
-        >
+          " @hover="onHover">
           <!-- Dynamic Slots for Custom Cells -->
-          <template
-            v-for="col in columns"
-            :key="col.id"
-            #[`${col.id}-cell`]="{ getValue, row }"
-          >
-            <component
-              v-if="col.meta?.type === 'status'"
-              :is="statusCell(getValue())"
-            />
+          <template v-for="col in columns" :key="col.id" #[`${col.id}-cell`]="{ getValue, row }">
+            <component v-if="col.meta?.type === 'status'" :is="statusCell(getValue())" />
 
-            <div
-              class="flex items-center gap-1"
-              v-else-if="col.id === 'full_name'"
+            <div class="flex items-center gap-1" v-else-if="col.id === 'full_name'"
               :class="props.rowClickable ? 'cursor-pointer' : ''"
-              @click="props.rowClickable && handleRowClick(row.original)"
-            >
-              <UAvatar
-                :src="row.original.image || undefined"
-                :icon="
-                  !row.original.image
-                    ? row.original.status === 'active'
-                      ? 'material-symbols-light:account-circle-outline'
-                      : 'material-symbols-light:no-accounts-outline'
-                    : undefined
-                "
-                size="md"
-                :alt="row.original.full_name"
-                :ui="{
+              @click="props.rowClickable && handleRowClick(row.original)">
+              <UAvatar :src="row.original.image || undefined" :icon="!row.original.image
+                  ? row.original.status === 'active'
+                    ? 'material-symbols-light:account-circle-outline'
+                    : 'material-symbols-light:no-accounts-outline'
+                  : undefined
+                " size="md" :alt="row.original.full_name" :ui="{
                   root: 'p-0 bg-transparent',
                   icon: !row.original.image
                     ? row.original.status === 'active'
                       ? 'w-full h-full bg-info'
                       : 'w-full h-full bg-error'
                     : '',
-                }"
-              />
+                }" />
               <div>
                 <p class="font-medium text-highlighted">
                   {{ row.original.full_name }}
@@ -536,95 +482,54 @@ function onHover(_e: Event, row: TableRow<Employee> | null) {
               </div>
             </div>
 
-            <div
-              class="flex items-center gap-1"
-              v-else-if="col.id === 'location_ar'"
+            <div class="flex items-center gap-1" v-else-if="col.id === 'location_ar'"
               :class="props.rowClickable ? 'cursor-pointer' : ''"
-              @click="props.rowClickable && handleRowClick(row.original)"
-            >
-              <UIcon
-                name="material-symbols:location-on-outline-rounded"
-                class="size-5 bg-info/70"
-              />
+              @click="props.rowClickable && handleRowClick(row.original)">
+              <UIcon name="material-symbols:location-on-outline-rounded" class="size-5 bg-info/70" />
               {{ row.original.location_ar }}
             </div>
 
             <template v-else-if="col.id === 'action'">
               <!-- Inline Mode: عرض الأزرار بجانب بعض -->
               <div v-if="shouldShowInline" class="flex items-center gap-1">
-                <UButton
-                  v-for="(action, idx) in getInlineActions(row.original)"
-                  :key="idx"
-                  :label="action.label"
-                  :icon="action.icon"
-                  :color="(action.color as any) || 'neutral'"
-                  variant="ghost"
-                  size="sm"
-                  @click="action.onSelect"
-                />
+                <UButton v-for="(action, idx) in getInlineActions(row.original)" :key="idx" :label="action.label"
+                  :icon="action.icon" :color="(action.color as any) || 'neutral'" variant="ghost" size="sm"
+                  @click="action.onSelect" />
               </div>
 
               <!-- Dropdown Mode: القائمة المنسدلة -->
-              <UDropdownMenu
-                v-else
-                :items="getDropdownActions(row.original)"
-                :content="{ align: 'center', side: 'left', sideOffset: 0 }"
-                :ui="{ content: 'w-24' }"
-              >
-                <UButton
-                  icon="i-lucide-ellipsis-vertical"
-                  color="neutral"
-                  variant="ghost"
-                  aria-label="Actions"
-                />
+              <UDropdownMenu v-else :items="getDropdownActions(row.original)"
+                :content="{ align: 'center', side: 'left', sideOffset: 0 }" :ui="{ content: 'w-24' }">
+                <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" aria-label="Actions" />
               </UDropdownMenu>
             </template>
 
-            <span
-              v-else-if="col.meta?.type === 'object'"
-              :class="props.rowClickable ? 'cursor-pointer' : ''"
-              @click="props.rowClickable && handleRowClick(row.original)"
-            >
+            <span v-else-if="col.meta?.type === 'object'" :class="props.rowClickable ? 'cursor-pointer' : ''"
+              @click="props.rowClickable && handleRowClick(row.original)">
               {{ resolveObjectValue(getValue(), col.meta?.valueKey) }}
             </span>
 
-            <slot
-              v-else
-              :name="`${col.id}-cell`"
-              :getValue="getValue"
-            >
-              <div
-                :class="props.rowClickable ? 'cursor-pointer' : ''"
-                @click="props.rowClickable && handleRowClick(row.original)"
-              >
+            <slot v-else :name="`${col.id}-cell`" :getValue="getValue">
+              <div :class="props.rowClickable ? 'cursor-pointer' : ''"
+                @click="props.rowClickable && handleRowClick(row.original)">
                 {{ displayValue(getValue()) }}
               </div>
             </slot>
           </template>
         </UTable>
 
-        <UPopover
-          :content="{
-            side: 'top',
-            sideOffset: 16,
-            updatePositionStrategy: 'always',
-          }"
-          :open="openDebounced"
-          :reference="reference"
-          :ui="{ arrow: 'hover-Poper' }"
-        >
+        <UPopover :content="{
+          side: 'top',
+          sideOffset: 16,
+          updatePositionStrategy: 'always',
+        }" :open="openDebounced" :reference="reference" :ui="{ arrow: 'hover-Poper' }">
           <template #content></template>
         </UPopover>
       </div>
     </ClientOnly>
 
     <div class="px-4 pt-4 border-t border-default">
-      <UPagination
-        :page="page"
-        :items-per-page="pageSize"
-        :total="total"
-        @update:page="emit('update:page', $event)"
-      />
+      <UPagination :page="page" :items-per-page="pageSize" :total="total" @update:page="emit('update:page', $event)" />
     </div>
   </div>
 </template>

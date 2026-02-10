@@ -3,9 +3,9 @@ export type FetchListOptions = {
   page?: number
   perPage?: number
   search?: string
+  filters?: Record<string, any>
   signal?: AbortSignal
 }
-
 export interface ApiResponse<T> {
   data: T
   message?: string

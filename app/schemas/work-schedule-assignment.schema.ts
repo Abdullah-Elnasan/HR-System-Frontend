@@ -1,37 +1,40 @@
-// schemas/work-schedule-assignment.schema.ts
+// schemas/workScheduleAssignment.schema.ts
 import { z } from 'zod'
 
-/**
- * WorkScheduleAssignment form validation schema
- * متوافق مع Laravel FormRequest
- */
 export const workScheduleAssignmentSchema = z.object({
   assignable_type: z
     .string()
+    .nullable()
     .optional()
-    .or(z.literal('')),
+    .or(z.literal('')), // نوع الإسناد
 
-  assignable_id: z
-    .number()
-    .nullable(),
+  assignable_id: z.preprocess(
+    (val) => {
+      const n = Number(val);
+      return isNaN(n) ? undefined : n;
+    },
+    z.number().int().nullable()
+  ),
 
-  work_schedule_id: z
-    .number()
-    .nullable(),
+  work_schedule_id: z.preprocess(
+    (val) => {
+      const n = Number(val);
+      return isNaN(n) ? undefined : n;
+    },
+    z.number().int().nullable()
+  ),
 
   starts_at: z
     .string()
     .nullable()
     .optional()
-    .or(z.literal('')),
+    .or(z.literal('')), // تاريخ البداية
 
   ends_at: z
     .string()
     .nullable()
     .optional()
-    .or(z.literal('')),
+    .or(z.literal('')), // تاريخ النهاية
 })
 
-export type WorkScheduleAssignmentForm = z.infer<
-  typeof workScheduleAssignmentSchema
->
+export type WorkScheduleAssignmentForm = z.infer<typeof workScheduleAssignmentSchema>

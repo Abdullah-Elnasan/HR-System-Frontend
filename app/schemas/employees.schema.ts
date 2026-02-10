@@ -1,9 +1,5 @@
 import { z } from 'zod'
 
-/**
- * Employee form validation schema
- * متوافق مع Laravel FormRequest
- */
 export const employeeSchema = z.object({
   first_name: z
     .string()

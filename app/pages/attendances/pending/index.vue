@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { generateColumns } from "~/utils/generateColumns";
+
 import { isAttendanceRow } from "~/composables/attendances/isAttendanceRow";
-import { useAttendance } from "~/composables/attendances/useAttendance";
+import { useAttendancePending } from "~/composables/attendances/useAttendancePending";
 import {
   emptyAttendanceForm,
   type Attendance,
   type AttendanceForm,
 } from "~/types/attendance";
-import { watchDebounced, useDebounceFn } from "@vueuse/core";
-import dayjs from "dayjs";
 
 const UButton = resolveComponent("UButton");
 
@@ -17,14 +16,6 @@ definePageMeta({
   title: "إدارة الحضور",
   keepalive: false,
 });
-
-/* ================== Date Filters ================== */
-const dateFrom = ref(dayjs().startOf("month").format("YYYY-MM-DD"));
-const dateTo = ref(dayjs().endOf("month").format("YYYY-MM-DD"));
-
-/* ================== Advanced Filters ================== */
-const selectedBranch = ref<number | null>(null);
-const selectedStatus = ref<string | null>(null);
 
 /* ================== Composable ================== */
 const {
@@ -40,13 +31,7 @@ const {
   deleteRecord,
   createRecord,
   updateRecord,
-  refetch,
-} = useAttendance({
-  dateFrom: dateFrom.value,
-  dateTo: dateTo.value,
-  branchId: selectedBranch.value,
-  status: selectedStatus.value,
-});
+} = useAttendancePending();
 
 const open = ref(false);
 const titleDrower = ref("");
@@ -76,22 +61,19 @@ const meta = {
 
 /* ================== Status Labels ================== */
 const statusLabels: Record<string, string> = {
-  pending: "قيد المراجعة",
+  present: "حاضر",
   absent: "غائب",
+  late: "متأخر",
+  early_leave: "مغادرة مبكرة",
+  half_day: "نصف يوم",
   incomplete: "مكتمل",
 };
-
-const statusOptions = [
-  { label: "الكل", value: null },
-  { label: "حاضر", value: "present" },
-  { label: "غائب", value: "absent" },
-  { label: "مكتمل", value: "incomplete" },
-];
 
 /* ================== Enhanced Data ================== */
 const enhancedRecords = computed(() =>
   records.value.map((record) => ({
     ...record,
+    // employee_name: record.employee.name_ar,
     status_label: statusLabels[record.status] ?? record.status,
     status_label_re:
       statusLabels[record.attendance_status] ?? record.attendance_status,
@@ -113,9 +95,9 @@ const columns = computed(() =>
             required_time: "الساعات المطلوبة",
             work_time: "ساعات العمل الفعلية",
             is_late: "دخول متأخر",
-            late_time: "مدة التأخير",
+            late_time: "مدة التأخير", // تم التعديل
             is_early_leave: "خروج مبكر",
-            early_leave_time: "مدة الخروج المبكر",
+            early_leave_time: "مدة الخروج المبكر", // تم التعديل
             overtime_time: "ساعات العمل الإضافي",
             undertime_time: "ساعات التقصير",
             status_label_re: "حالة الحضور",
@@ -146,6 +128,9 @@ const columns = computed(() =>
             check_in: { type: "date" },
             check_out: { type: "date" },
             undertime_time: { type: "number" },
+            // required_minutes: { type: "number" },
+            // overtime_minutes: { type: "number" },
+            // undertime_minutes: { type: "number" },
             status_label: { filterable: true },
             action: { hideable: false },
           },
@@ -154,59 +139,6 @@ const columns = computed(() =>
       )
     : [],
 );
-
-/* ================== Dynamic Branches Search ================== */
-const branchSearchQuery = ref("");
-const branchesLoading = ref(false);
-const branches = ref<Array<{ label: string; value: number | null }>>([
-  { label: "كل الفروع", value: null },
-]);
-
-// دالة البحث في الفروع
-const searchBranches = useDebounceFn(async (query: string) => {
-  branchesLoading.value = true;
-  try {
-    const res: any = await $fetch("/api/branches/branches", {
-      params: {
-        "filter[search]": query,
-        per_page: 20,
-      },
-    });
-
-    branches.value = [
-      { label: "كل الفروع", value: null },
-      ...(res?.data || []).map((b: any) => ({
-        label: b.name_ar || b.name,
-        value: b.id,
-      })),
-    ];
-  } catch (error) {
-    console.error("Error searching branches:", error);
-  } finally {
-    branchesLoading.value = false;
-  }
-}, 300);
-
-// تحميل الفروع الأولية
-onMounted(async () => {
-  await searchBranches("");
-});
-
-// مراقبة تغيير نص البحث
-watch(branchSearchQuery, (newQuery) => {
-  searchBranches(newQuery);
-});
-
-// تحويل selectedBranch إلى object كامل بدلاً من value فقط
-// تحويل selectedBranch إلى object كامل بدلاً من value فقط
-const selectedBranchObj = computed({
-  get: (): { label: string; value: number | null } | undefined => {
-    return branches.value?.find((b) => b.value === selectedBranch.value);
-  },
-  set: (val: { label: string; value: number | null } | undefined) => {
-    selectedBranch.value = val?.value ?? null;
-  },
-});
 
 /* ================== Effects ================== */
 watch(
@@ -217,77 +149,12 @@ watch(
   { immediate: true },
 );
 
-// Watch للفلاتر مع Debounce
-watchDebounced(
-  [dateFrom, dateTo, selectedBranch, selectedStatus],
-  async ([newFrom, newTo, branch, status]) => {
-    const filters: Record<string, any> = {};
-
-    if (newFrom && dayjs(newFrom).isValid()) {
-      filters["filter[date_from]"] = newFrom;
-    }
-    if (newTo && dayjs(newTo).isValid()) {
-      filters["filter[date_to]"] = newTo;
-    }
-    if (branch !== null) {
-      filters["filter[branch_id]"] = branch;
-    }
-    if (status !== null) {
-      filters["filter[status]"] = status;
-    }
-
-    await refetch(filters);
-  },
-  { debounce: 500 },
-);
-
 /* ================== Handlers ================== */
 const onPageChange = (p: number) => setPage(p);
 const onPageSizeChange = (s: number) => setPageSize(s);
 const onSearchGlobal = (val: string) => setSearch(val);
 const onSortingChange = (val: any[]) => (sorting.value = val);
 const onColumnFiltersChange = (val: any[]) => (columnFilters.value = val);
-
-/* ================== Quick Date Filters ================== */
-const setDateRange = (range: "today" | "week" | "month" | "year") => {
-  switch (range) {
-    case "today":
-      dateFrom.value = dayjs().format("YYYY-MM-DD");
-      dateTo.value = dayjs().format("YYYY-MM-DD");
-      break;
-    case "week":
-      dateFrom.value = dayjs().startOf("week").format("YYYY-MM-DD");
-      dateTo.value = dayjs().endOf("week").format("YYYY-MM-DD");
-      break;
-    case "month":
-      dateFrom.value = dayjs().startOf("month").format("YYYY-MM-DD");
-      dateTo.value = dayjs().endOf("month").format("YYYY-MM-DD");
-      break;
-    case "year":
-      dateFrom.value = dayjs().startOf("year").format("YYYY-MM-DD");
-      dateTo.value = dayjs().endOf("year").format("YYYY-MM-DD");
-      break;
-  }
-};
-
-/* ================== Reset Filters ================== */
-/* ================== Reset Filters ================== */
-const resetFilters = async () => {
-  dateFrom.value = dayjs().startOf("month").format("YYYY-MM-DD");
-  dateTo.value = dayjs().endOf("month").format("YYYY-MM-DD");
-  selectedBranch.value = null;
-  selectedStatus.value = null;
-  branchSearchQuery.value = "";
-  const filters: Record<string, any> = {};
-  filters["filter[date_from]"] = dateFrom.value;
-  ((filters["filter[date_to]"] = dateTo.value),
-    (filters["filter[branch_id]"] = selectedBranch.value),
-    (filters["filter[status]"] = selectedStatus.value = null),
-    (filters["filter[search]"] = branchSearchQuery.value),
-    // ✅ انتظار التحديث ثم إعادة الجلب
-    await nextTick());
-  await refetch(filters);
-};
 
 /* ================== Form Management ================== */
 const editingId = ref<number | null>(null);
@@ -364,7 +231,6 @@ const onDeleteRecordHandler = async (id: number) => {
     :sorting="sorting"
     :global-filter="search"
     :column-filters="columnFilters"
-    :btnCreate="true"
     title-btn-create="إضافة سجل حضور"
     title-btn-icon="lucide:calendar-check"
     title-btn-edit="تعديل سجل حضور"
@@ -376,86 +242,7 @@ const onDeleteRecordHandler = async (id: number) => {
     @delete:row="onDeleteRecordHandler"
     @drower:open="openDrower"
     @update:data="openDrower"
-  >
-    <!-- Slot للفلاتر المخصصة -->
-    <template #toolbar-prepend>
-      <div class="flex flex-wrap gap-2 items-center">
-        <!-- أزرار الفترات السريعة -->
-        <div class="flex gap-1">
-          <UButton
-            label="الشهر"
-            size="sm"
-            variant="outline"
-            color="neutral"
-            @click="setDateRange('month')"
-          />
-          <UButton
-            label="السنة"
-            size="sm"
-            variant="outline"
-            color="neutral"
-            @click="setDateRange('year')"
-          />
-        </div>
-
-        <!-- Divider -->
-        <div class="h-8 w-px bg-gray-300"></div>
-
-        <div class="flex gap-2 items-center">
-          <label class="text-sm text-muted font-medium">من:</label>
-          <UInput type="date" v-model="dateFrom" class="w-24" size="sm" />
-        </div>
-        <div class="flex gap-2 items-center">
-          <label class="text-sm text-muted font-medium">إلى:</label>
-          <UInput type="date" v-model="dateTo" class="w-24" size="sm" />
-        </div>
-
-        <!-- Divider -->
-        <div class="h-8 w-px bg-gray-300"></div>
-
-        <!-- فلتر الفرع مع البحث الديناميكي -->
-        <div class="flex gap-2 items-center">
-          <label class="text-sm text-muted font-medium">الفرع:</label>
-          <USelectMenu
-            v-model="selectedBranchObj"
-            :items="branches"
-            :loading="branchesLoading"
-            searchable
-            searchable-placeholder="ابحث عن فرع..."
-            by="value"
-            option-attribute="label"
-            placeholder="اختر الفرع"
-            class="w-28"
-            size="sm"
-            trailing-icon="mi:select"
-            @update:query="branchSearchQuery = $event"
-          />
-        </div>
-
-        <!-- فلتر الحالة -->
-        <div class="flex gap-2 items-center">
-          <label class="text-sm text-muted font-medium">الحالة:</label>
-          <USelect
-            v-model="selectedStatus"
-            :items="statusOptions"
-            placeholder="اختر الحالة"
-            class="w-20"
-            size="sm"
-          />
-        </div>
-
-        <!-- زر إعادة تعيين الفلاتر -->
-        <UButton
-          icon="i-lucide-x"
-          label="إعادة تعيين"
-          size="sm"
-          variant="ghost"
-          color="neutral"
-          @click="resetFilters"
-        />
-      </div>
-    </template>
-  </AppTable>
+  />
 
   <ClientOnly>
     <UDrawer
@@ -490,7 +277,7 @@ const onDeleteRecordHandler = async (id: number) => {
         </div>
 
         <ClientOnly>
-          <FormsAttendancesForm
+          <FormsAttendancesPendingForm
             ref="formRef"
             v-model="formModel"
             :mode="mode"

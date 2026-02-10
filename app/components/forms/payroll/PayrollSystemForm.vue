@@ -2,7 +2,7 @@
 import type { PayrollSystemForm } from "~/types/PayrollSystem";
 import type { Field } from "~/components/generic-form.vue";
 import { useFormModel } from "~/composables/useFormModel";
-import {payrollSystemSchema} from "~/schemas/payroll-system.schema"
+import { payrollSystemSchema } from "~/schemas/payroll-system.schema";
 
 /* ================== Props / Emits ================== */
 const props = defineProps<{
@@ -142,7 +142,7 @@ watch(
     } else if (newType === "hourly") {
       model.value.monthly_salary = null;
     }
-  }
+  },
 );
 
 /* ================== Expose ================== */

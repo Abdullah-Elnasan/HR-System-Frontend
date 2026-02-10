@@ -1,10 +1,6 @@
 // schemas/branch.schema.ts
 import { z } from 'zod'
 
-/**
- * Branch form validation schema
- * متوافق مع Laravel FormRequest
- */
 export const branchSchema = z.object({
   name_ar: z
     .string()

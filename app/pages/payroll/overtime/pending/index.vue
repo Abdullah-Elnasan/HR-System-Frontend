@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { generateColumns } from "~/utils/generateColumns";
-import type { Employee, EmployeeForm } from "~/types/employee";
-import { emptyEmployeeForm } from "~/types/employee";
-import { useEmployees } from "~/composables/employee/useEmployees";
-import { isEmployeeRow } from "~/composables/employee/isEmployeeRow";
+import type {
+  OvertimePending,
+  OvertimePendingForm,
+} from "~/types/payrolls/overtimePending";
+import { emptyOvertimePendingForm } from "~/types/payrolls/overtimePending";
+import { isOvertimePendingRow } from "~/composables/overtimePending/isOvertimePendingRow";
+import { useOvertimePending } from "~/composables/overtimePending/useOvertimePending";
 
 const UButton = resolveComponent("UButton");
 
 definePageMeta({
   layout: "dashboard",
-  title: "إدارة الموظفين",
+  title: "إدارة الوقت الإضافي المعلق",
   keepalive: false,
 });
 
@@ -24,16 +27,14 @@ const {
   setPage,
   setPageSize,
   setSearch,
-  deleteEmployee,
-  createEmployee,
-  updateEmployee,
-} = useEmployees();
+  createRecord,
+} = useOvertimePending();
 
 const open = ref(false);
 const titleDrower = ref("");
-const router = useRouter();
+
 /* ================== Computed ================== */
-const employees = computed<Employee[]>(() => data.value ?? []);
+const records = computed<OvertimePending[]>(() => data.value ?? []);
 
 const safePagination = computed(() => ({
   total: pagination.value?.total ?? 0,
@@ -48,80 +49,58 @@ const sorting = ref<any[]>([]);
 const columnFilters = ref<any[]>([]);
 const firstLoad = ref(true);
 
-/* ================== UI ================== */
-const statusMap: Record<string, { label: string; color: string }> = {
-  active: { label: "نشط", color: "success" },
-  inactive: { label: "غير نشط", color: "error" },
-};
-
 const meta = {
   class: {
     tr: (row: any) =>
-      row.original.status === "inactive"
-        ? "bg-error/10"
-        : "bg-white dark:bg-gray-900 shadow-sm ring-1 ring-default/10 rounded-lg transition-shadow",
+      "bg-white dark:bg-gray-900 shadow-sm ring-1 ring-default/10 rounded-lg transition-shadow",
   },
 };
 
+/* ================== Enhanced Data ================== */
+const enhancedRecords = computed(() =>
+  records.value.map((record) => ({
+    ...record,
+    // employee_name: record.employee.name_ar,
+    // payroll_run_name: record.payroll_run?.name ?? "—",
+    // status_label: statusLabels[record.status] ?? record.status,
+  })),
+);
+
 /* ================== Columns ================== */
 const columns = computed(() =>
-  employees.value.length
-    ? generateColumns<Employee>(
-        employees.value,
+  enhancedRecords.value.length
+    ? generateColumns<any>(
+        enhancedRecords.value,
         {
           labels: {
-            full_name: "الاسم",
-            email: "البريد الإلكتروني",
-            status: "الحالة",
-            branch: "الفرع",
-            department: "القسم",
+            employee_name: "الموظف",
+            suggested_date_from: "من تاريخ",
+            suggested_date_to: "إلى تاريخ",
+            actual_minutes: "الدقائق",
+            last_settlement_date: "آخر اعتماد",
             action: "العمليات",
-            pin: "الرقم التعريفي",
-            user_group: "مجموعة المستخدمين",
-            current_work_schedule: "نظام الدوام الحالي",
-            upcoming_work_schedule: "نظام الدوام القادم",
-            payroll_system: "نظام الراتب ",
-
           },
-          exclude: [
-            "national_id",
-            "position",
-            "image",
-            "created_at",
-            "updated_at",
-            "first_name",
-            "last_name",
-          ],
+          exclude: ["employee_id", "department_id"],
           columns: {
-            email: { filterable: true, hidden: true },
-            full_name: {
-              filterable: true,
-              cell: ({ row }) => `${row.first_name} ${row.last_name}`,
-            },
-            status: { type: "status", cell: ({ getValue }) => getValue() },
-            phone: { hidden: true },
-            branch: { type: "object", valueKey: "name_ar" },
-            current_work_schedule: { type: "object", valueKey: "name_ar" },
-            upcoming_work_schedule: { type: "object", valueKey: "name_ar" },
-            payroll_system: { type: "object", valueKey: "name" },
-            department: { type: "object", valueKey: "name_ar" },
-            user_group: { type: "object", valueKey: "name_ar" },
-            birth_date: { hidden: true },
+            employee_name: { filterable: true },
+            suggested_date_from: { type: "date" },
+            suggested_date_to: { type: "date" },
+            last_settlement_date: { type: "date" },
             action: { hideable: false },
           },
         },
-        UButton
+        UButton,
       )
-    : []
+    : [],
 );
 
 /* ================== Effects ================== */
 watch(
-  employees,
+  records,
   (val) => {
     if (val.length) firstLoad.value = false;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 /* ================== Handlers ================== */
@@ -134,64 +113,34 @@ const onColumnFiltersChange = (val: any[]) => (columnFilters.value = val);
 /* ================== Form Management ================== */
 const editingId = ref<number | null>(null);
 const mode = computed(() => (editingId.value ? "edit" : "create"));
-const formModel = reactive<EmployeeForm>(emptyEmployeeForm());
+const formModel = reactive<OvertimePendingForm>(emptyOvertimePendingForm());
 
 const openDrower = (payload: { title: string; row?: unknown }) => {
   (document.activeElement as HTMLElement)?.blur();
   open.value = !open.value;
   titleDrower.value = payload.title;
-
-  if (payload.row && isEmployeeRow(payload.row)) {
-    editingId.value = payload.row.id;
-
-    const [first_name, ...rest] = (payload.row.full_name ?? "").split(" ");
-    const last_name = rest.join(" ");
-
+  if (payload.row && isOvertimePendingRow(payload.row)) {
     Object.assign(formModel, {
-      first_name,
-      last_name,
-      email: payload.row.email,
-      phone: payload.row.phone,
-      status: payload.row.status,
-      position: payload.row.position,
-      national_id: payload.row.national_id,
-      pin: payload.row.pin,
-      birth_date: payload.row.birth_date,
-      branch_id: payload.row.branch?.id ?? 0,
-      user_group_id: payload.row.user_group?.id ?? 0,
-      department_id: payload.row.department?.id ?? 0,
-       image: null,
+      employee_id: payload.row.employee_id,
+      employee_name: payload.row.employee_name,
+      date_from: payload.row.suggested_date_from || null,
+      date_to: payload.row.suggested_date_to || null,
+      approved_minutes: payload.row.approved_minutes,
+      rate_multiplier: payload.row.rate_multiplier,
     });
-
-    console.log(formModel)
-  } else {
-    editingId.value = null;
-    Object.assign(formModel, emptyEmployeeForm());
   }
 };
 
 const formRef = ref<{ submit: () => void } | null>(null);
 
-const onSubmit = async (value: EmployeeForm) => {
+const onSubmit = async (value: OvertimePendingForm) => {
   try {
-    if (editingId.value) {
-      await updateEmployee(editingId.value, value);
-    } else {
-      await createEmployee(value);
-    }
+    await createRecord(value);
     open.value = false;
   } catch (error) {
     console.error("Submit error:", error);
   }
 };
-
-const onDeleteEmployeeHandler = async (id: number) => {
-  await deleteEmployee(id);
-};
-
-function goToAttendancesForEmployee(row: { id: number }) {
-  router.push(`/attendances/${row.id}`); // أو أي مسار آخر
-}
 </script>
 
 <template>
@@ -206,29 +155,31 @@ function goToAttendancesForEmployee(row: { id: number }) {
   <AppTable
     v-else
     :columns="columns"
-    :data="employees"
-    :btn-create="true"
+    :data="enhancedRecords"
+    :actions="{
+      view: false,
+      copy: false,
+      edit: { label: 'اعتماد', icon: 'i-lucide-pen' },
+      delete: false,
+      displayMode: 'inline',
+    }"
     :total="safePagination.total"
     :page="page"
     :page-sizes="pageSizes"
     :page-size="pageSize"
     :loading="pending"
-    :status-map="statusMap"
     :meta="meta"
-    :row-clickable="true"
-    :on-row-click="goToAttendancesForEmployee"
     :sorting="sorting"
     :global-filter="search"
     :column-filters="columnFilters"
-    title-btn-create="إضافة موظف"
-    title-btn-icon="material-symbols:group-add-outline-rounded"
-    title-btn-edit="تعديل موظف"
+    title-btn-create="إضافة وقت إضافي"
+    title-btn-icon="lucide:clock-alert"
+    title-btn-edit="اعتماد وقت إضافي"
     @update:page="onPageChange"
     @update:page-size="onPageSizeChange"
     @update:sorting="onSortingChange"
     @update:global-filter="onSearchGlobal"
     @update:column-filters="onColumnFiltersChange"
-    @delete:row="onDeleteEmployeeHandler"
     @drower:open="openDrower"
     @update:data="openDrower"
   />
@@ -236,7 +187,7 @@ function goToAttendancesForEmployee(row: { id: number }) {
   <ClientOnly>
     <UDrawer
       v-model:open="open"
-      :description="`إدارة الموظفين`"
+      :description="`إدارة الوقت الإضافي المعلق`"
       direction="left"
       :title="titleDrower"
       :ui="{
@@ -266,20 +217,19 @@ function goToAttendancesForEmployee(row: { id: number }) {
         </div>
 
         <ClientOnly>
-          <FormsEmployeeForm
+          <FormsPayrollOvertimePendingForm
             ref="formRef"
             v-model="formModel"
             :mode="mode"
             @submit="onSubmit"
             class="min-w-150 items-start"
-            :columns="2"
           />
         </ClientOnly>
       </template>
 
       <template #footer>
         <UButton
-          label="إرسال"
+          label="اعتماد"
           color="neutral"
           class="justify-center"
           @click="formRef?.submit()"
