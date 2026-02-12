@@ -148,7 +148,7 @@ export const usePayrollRunsStore = defineStore("payrollRuns", {
           this.pagination.total -= 1;
         }
 
-        await $fetch(`/api/payroll-runs/${id}`, { method: 'DELETE' });
+      // await $fetch(`/api/payroll-runs/${id}`, { method: 'DELETE' });
 
         toast.add({ title: 'تم حذف دورة الرواتب بنجاح', color: 'success' });
         return true;
