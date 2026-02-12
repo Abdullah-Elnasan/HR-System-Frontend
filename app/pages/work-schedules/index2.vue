@@ -141,19 +141,19 @@ const statusMap: Record<string, { label: string; color: string }> = {
 
 const formRef = ref<{ submit: () => void } | null>(null);
 
-const onSubmit = async (value: WorkScheduleForm) => {
-  const payload = {
-    ...value,
-    is_active: value.is_active ? 1 : 0,
-  };
+// const onSubmit = async (value: WorkScheduleForm) => {
+//   const payload = {
+//     ...value,
+//     is_active: value.is_active ? 1 : 0,
+//   };
 
-  if (editingId.value) {
-    await updateWorkSchedule(editingId.value, payload);
-  } else {
-    await createWorkSchedule(payload);
-  }
-  open.value = !open.value;
-};
+//   if (editingId.value) {
+//     await updateWorkSchedule(editingId.value, payload);
+//   } else {
+//     await createWorkSchedule(payload);
+//   }
+//   open.value = !open.value;
+// };
 
 const onDeleteWorkScheduleHandler = async (id: number) => {
   await deleteWorkSchedule(id);
@@ -233,10 +233,10 @@ const onDeleteWorkScheduleHandler = async (id: number) => {
             ref="formRef"
             v-model="formModel"
             :mode="mode"
-            @submit="onSubmit"
             class="min-w-150 items-start"
             :columns="1"
-          />
+            />
+            <!-- @submit="onSubmit" -->
         </ClientOnly>
       </template>
 

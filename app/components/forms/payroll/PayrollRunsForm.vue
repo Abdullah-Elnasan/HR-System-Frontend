@@ -70,12 +70,12 @@ const updateTime = (datetime: string | null, time: string): string | null => {
   return `${datePart}T${time}:00`;
 };
 
-const approvedAtTime = computed({
-  get: () => extractTime(model.value.approved_at),
-  set: (val) => {
-    model.value.approved_at = updateTime(model.value.approved_at, val);
-  },
-});
+// const approvedAtTime = computed({
+//   get: () => extractTime(model.value.approved_at),
+//   set: (val) => {
+//     model.value.approved_at = updateTime(model.value.approved_at, val);
+//   },
+// });
 
 /* ================== Fields ================== */
 const fields = computed<Field<PayrollRunForm>[]>(() => [
@@ -214,8 +214,8 @@ defineExpose({
             </template>
           </UInputDate>
 
+          <!-- v-model="approvedAtTime" -->
           <UInput
-            v-model="approvedAtTime"
             type="time"
             class="w-32"
           />
