@@ -2,8 +2,8 @@
 import { generateColumns } from "~/utils/generateColumns";
 import type { WorkScheduleAssignment, WorkScheduleAssignmentForm } from "~/types/workScheduleAssignments";
 import { emptyWorkScheduleAssignmentForm } from "~/types/workScheduleAssignments";
-import { isWorkScheduleAssignmentRow } from "~/composables/workScheduleAssignment/isWorkScheduleAssignmentRow";
-import { useWorkScheduleAssignments } from "~/composables/workScheduleAssignment/useWorkScheduleAssignments";
+import { isWorkScheduleAssignmentRow } from "~/composables/workScheduleAssignment2/isWorkScheduleAssignmentRow";
+import { useWorkScheduleAssignments } from "~/composables/workScheduleAssignment2/useWorkScheduleAssignments";
 
 const UButton = resolveComponent("UButton");
 
