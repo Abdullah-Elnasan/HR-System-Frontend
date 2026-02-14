@@ -71,9 +71,12 @@ export default defineNuxtConfig({
 
   // لا تضع ssr:false هنا
   routeRules: {
-    '/HRSystemFrontend/': { ssr: true },
-    '/HRSystemFrontend/app/**': { ssr: false },
-    '/HRSystemFrontend/login': { ssr: false }
+    '/': { ssr: true },
+    '/app/**': { ssr: false },
+    '/login': { ssr: false }
+    // '/HRSystemFrontend/': { ssr: true },
+    // '/HRSystemFrontend/app/**': { ssr: false },
+    // '/HRSystemFrontend/login': { ssr: false }
   },
 
   runtimeConfig: {
